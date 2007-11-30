@@ -43,6 +43,7 @@
 %% API
 -export([start_link/0, 
     start_link/1,
+    stop/0,
     new_image_blank/2,
     write_to_png/1,
     close_image/0,
@@ -101,8 +102,18 @@ start_link() ->
 %%--------------------------------------------------------------------
 start_link(CNodeNumber) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, CNodeNumber, []).
-    
-    
+  
+  
+%%--------------------------------------------------------------------
+%% @spec () -> any()
+%% @doc 
+%% Stops the server
+%% @end 
+%%--------------------------------------------------------------------  
+stop() ->
+    gen_server:call(?MODULE, stop).
+     
+            
 %%--------------------------------------------------------------------
 %% @spec (Width::integer(), Height::integer()) ->
 %%     (ok | {error, Reason})
@@ -438,6 +449,10 @@ init(CNodeNumber) ->
 %% @doc Handling call messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_call(stop, _From, State) ->
+    call_cnode(State#state.cnode, {stop, {}}),
+    {stop, normal, State};
+    
 handle_call(Msg, _From, State) ->
     Reply = call_cnode(State#state.cnode, Msg),
     {reply, Reply, State}.
@@ -471,6 +486,7 @@ handle_info(_Info, State) ->
 %% @end 
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
+    io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, "terminate"]),
     ok.
 
 %%--------------------------------------------------------------------

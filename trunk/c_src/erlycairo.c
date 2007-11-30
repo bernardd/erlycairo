@@ -1,6 +1,34 @@
-/* erlycairo.c */
-/* Copyright Roberto Saccon 2007 */
-/* For license information see LICENSE.txt */
+// File:      erlycairo.c
+// author:    Roberto Saccon <rsaccon@gmail.com> [http://rsaccon.com]
+// copyright: 2007 Roberto Saccon
+//  
+// This module contains functions for starting a c-node which binds a subset
+// of the cairo 2D graphics functions
+// 
+// The MIT License
+// 
+// Copyright (c) 2007 Roberto Saccon
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+// 
+// since 2007-11-29 by Roberto Saccon
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,7 +100,11 @@ int main(int argc, char *argv[]) {
         msgp = erl_element(3, emsg.msg);
         fnp = erl_element(1, msgp);
         argp = erl_element(2, msgp);  
-        if (is_function(fnp, "new_image_blank")) {
+        
+        if (is_function(fnp, "stop")) {
+          loop = 0;
+          status = ERLYCAIRO_STATUS_OK;
+        } else if (is_function(fnp, "new_image_blank")) {
           status = new_image_blank(fromp, argp);
         } else if (is_function(fnp, "write_to_png")) {
           status = write_to_png(fromp, argp);
@@ -86,7 +118,7 @@ int main(int argc, char *argv[]) {
           status = set_line_width(fromp, argp);
         } else if (is_function(fnp, "set_source_rgba")) {
           status = set_source_rgba(fromp, argp);	
-	} else if (is_function(fnp, "set_operator")) {
+	    } else if (is_function(fnp, "set_operator")) {
           status = set_operator(fromp, argp);
         } else if (is_function(fnp, "move_to")) {
           status = move_to(fromp, argp);
@@ -153,7 +185,6 @@ int main(int argc, char *argv[]) {
       }
     }
   }
-  fprintf(stderr, "erlycairo loop exit\n\r"); 
   exit(EXIT_SUCCESS);
 }
 
