@@ -1,4 +1,6 @@
 ERL=erl
+APP_NAME=erlycairo_demo
+NODE_NAME=$(APP_NAME)
 
 all: 
 	$(ERL) -make
@@ -13,7 +15,8 @@ docs:
 
 run:
 	$(ERL) -pa `pwd`/ebin \
-	-s erlycairo_demo
+	-s $(APP_NAME) \
+	-sname $(NODE_NAME)
 		
 clean:
 	rm -fv ebin/*

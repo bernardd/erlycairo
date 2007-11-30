@@ -34,12 +34,12 @@
 -module(erlycairo_demo).
 -author('rsaccon@gmail.com').
 
--define(CNodeNumber, 1).
 
 -define(C_NODE_NUMBER, 3).  %% TODO add gen_server to handle State such as C-Node-Number
+-define(TIMEOUT, 1000).
 
 -export([start/0,
-         test_rect/0,
+         create_images/0,
          new_image_blank/2,
          write_to_png/1,
          close_image/0,
@@ -76,26 +76,29 @@
 %%=====================================================================
 
 start() ->   
-   CNodeBinPath = filename:join([filename:dirname(code:which(?MODULE)),"..", "priv", "bin", "erlycairo"]),
-   Number = integer_to_list(?C_NODE_NUMBER),
-   Cookie = atom_to_list(erlang:get_cookie()),
-   Node = atom_to_list(node()),
-   Port = open_port({spawn, CNodeBinPath ++ " " ++ Number ++ " " ++ Cookie ++ " " ++ Node}, []),
-   spawn(fun() -> loop(Port) end).
+   erlycairo:start_link().
+   %% CNodeBinPath = filename:join([filename:dirname(code:which(?MODULE)),"..", "priv", "bin", "erlycairo"]),
+   %% Number = integer_to_list(?C_NODE_NUMBER),
+   %% Cookie = atom_to_list(erlang:get_cookie()),
+   %% Node = atom_to_list(node()),
+   %% Cmd = CNodeBinPath ++ " " ++ Number ++ " " ++ Cookie ++ " " ++ Node,
+   %% io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, Cmd]),
+   %% Port = open_port({spawn, Cmd}, []),
+   %% spawn(fun() -> loop(Port) end).
     
     
-test_rect() ->
-    rectangle("images/rect.png", 100, 100, [0.5, 0.5, 0.5, 0,5]).
+create_images()->
+    rect("images/rect.png", 100, 100, [0.5, 0.5, 0.5, 0.5]).
      
     
-test_rect(File, W, H, [FR, FG, FB, FA]) ->
-    case new_image_blank(W, H) of
+rect(File, W, H, [FR, FG, FB, FA]) ->
+    case erlycairo:new_image_blank(W, H) of
         ok ->
-            set_source_rgba(FR, FG, FB, FA),
-            rectangle(0, 0, W, H), 
-            fill(),
-            write_to_png(File),
-            close_image(),
+            erlycairo:set_source_rgba(FR, FG, FB, FA),
+            erlycairo:rectangle(0, 0, W, H), 
+            erlycairo:fill(),
+            erlycairo:write_to_png(File),
+            erlycairo:close_image(),
             ok;
         {error, Reason} ->
             exit(Reason)
@@ -107,6 +110,7 @@ test_rect(File, W, H, [FR, FG, FB, FA]) ->
 %% @spec new_image_blank(Width::integer(), Height::integer()) ->
 %%     (ok | {error, Reason})
 new_image_blank(Width, Height) ->
+io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, "strt"]),
     call_cnode({new_image_blank, {Width, Height}}).
 
 %% @doc Saves image as PNG file.
@@ -277,19 +281,23 @@ show_text(Text) ->
 %% Internal functions
 %% ============================================
 
-loop(Port) ->
-   receive
-     Anything ->
-       io:format("Received from erlycairo: ~p~n", [Anything]),
-       loop(Port)
-   end.
+%% loop(Port) ->
+%%    receive
+%%      Anything ->
+%%        io:format("Received from erlycairo: ~p~n", [Anything]),
+%%        loop(Port)
+%%    end.
 
 
 call_cnode(Msg) ->
     Hostname = string:strip(os:cmd("hostname -s"), right, $\n),
-    Nodename = "c" ++ integer_to_list(?CNodeNumber) ++ "@" ++ Hostname,
+    Nodename = "c" ++ integer_to_list(?C_NODE_NUMBER) ++ "@" ++ Hostname,
     {any, list_to_atom(Nodename)} ! {call, self(), Msg},
     receive
-	{cnode, Result} ->
-	    Result
+	    {cnode, Result} ->
+	        Result
+	after 
+	    ?TIMEOUT ->
+	        %% TODO: proper errorlogging
+	        {error, timeout}
     end.

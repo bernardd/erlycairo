@@ -32,6 +32,7 @@ typedef struct _cairo_context {
 cairo_context *cairo_context_hash = NULL;
 
 int main(int argc, char *argv[]) {
+     
   int fd;                      /* fd to Erlang node */
   unsigned char buf[BUFSIZE];  /* Buffer for incoming message */
   ErlMessage emsg;             /* Incoming message */
@@ -42,19 +43,22 @@ int main(int argc, char *argv[]) {
   ETERM *fromp, *msgp, *fnp, *argp, *resp;
   int received, status, loop = 1;
 
+  if (argc < 4)
+    erl_err_quit("invalid_args");
+    
   number = atoi(argv[1]);
   cookie = argv[2];
   creation = 0;
   erlang_node = argv[3];
-
+  
   erl_init(NULL, 0);
-
+  
   if (!erl_connect_init(number, cookie, creation))
     erl_err_quit("erl_connect_init");
 
   if ((fd = erl_connect(erlang_node)) < 0)
     erl_err_quit("erl_connect"); 
-    
+     
   while (loop) {
     received = erl_receive_msg(fd, buf, BUFSIZE, &emsg);
 
@@ -63,7 +67,7 @@ int main(int argc, char *argv[]) {
     } else if (received == ERL_ERROR) {
       loop = 0;
     } else {
-      if (emsg.type == ERL_REG_SEND) {
+      if (emsg.type == ERL_REG_SEND) {          
         fromp = erl_element(2, emsg.msg);
         msgp = erl_element(3, emsg.msg);
         fnp = erl_element(1, msgp);
