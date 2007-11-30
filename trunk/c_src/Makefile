@@ -1,6 +1,6 @@
-# set OTP variable according to your environemnt
+# set OTP variable according to your environment
 
-OTP=$(HOME)/cean
+OTP=$(HOME)/R11B
 
 UNAME = $(shell uname)
 

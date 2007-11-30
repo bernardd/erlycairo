@@ -1,8 +1,6 @@
 ERL=erl
 
-all:    erl c-node
-
-erl:
+all: 
 	$(ERL) -make
 
 c-node:
@@ -13,9 +11,11 @@ docs:
 	-noinput \
 	-run edoc_run application "'ErlyCairo'" '"."' '[no_packages]'
 
-clean:	clean-erl clean-c-node
- 
-clean-erl:
+run:
+	$(ERL) -pa `pwd`/ebin \
+	-s erlycairo_demo
+		
+clean:
 	rm -fv ebin/*
 	rm -fv erl_crash.dump
 
