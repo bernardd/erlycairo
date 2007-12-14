@@ -422,9 +422,9 @@ show_text(Text) ->
 
 %%--------------------------------------------------------------------
 %% @spec init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
+%%                     {ok, State, Timeout} |
+%%                     ignore               |
+%%                     {stop, Reason}
 %% @doc Initiates the server
 %% @end 
 %%--------------------------------------------------------------------  
@@ -433,7 +433,7 @@ init(CNodeNumber) ->
     Cookie = atom_to_list(erlang:get_cookie()),
     Node = atom_to_list(node()),
     Cmd = lists:concat([CNodeBinPath, " ", CNodeNumber, " ", Cookie, " ", Node]),
-    Port = open_port({spawn, Cmd}, []),    
+    Port = open_port({spawn, Cmd}, []),   
     HostName = string:strip(os:cmd("hostname -s"), right, $\n),
     CNodeName = lists:concat(["c", CNodeNumber, "@", HostName]),
     {ok, #state{cnode = list_to_atom(CNodeName), port=Port}}.
@@ -459,8 +459,8 @@ handle_call(Msg, _From, State) ->
 
 %%--------------------------------------------------------------------
 %% @spec handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
+%%                                  {noreply, State, Timeout} |
+%%                                  {stop, Reason, State}
 %% @doc Handling cast messages
 %% @end 
 %%--------------------------------------------------------------------
@@ -469,8 +469,8 @@ handle_cast(_Msg, State) ->
 
 %%--------------------------------------------------------------------
 %% @spec handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
+%%                                   {noreply, State, Timeout} |
+%%                                   {stop, Reason, State}
 %% @doc Handling all non call/cast messages
 %% @end 
 %%--------------------------------------------------------------------
@@ -505,10 +505,10 @@ code_change(_OldVsn, State, _Extra) ->
 call_cnode(CNode, Msg) ->
     {any, CNode} ! {call, self(), Msg},
     receive
-	    {cnode, Result} ->
-	        Result
-	after 
-	    ?TIMEOUT ->
-	        %% TODO: proper errorlogging
-	        {error, timeout}
+        {cnode, Result} ->
+            Result
+    after 
+        ?TIMEOUT ->
+            %% TODO: proper errorlogging
+            {error, timeout}
     end.
