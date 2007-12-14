@@ -505,6 +505,9 @@ code_change(_OldVsn, State, _Extra) ->
 call_cnode(CNode, Msg) ->
     {any, CNode} ! {call, self(), Msg},
     receive
+        %% TODO: receive only from our CNode with specific CNodeNumber
+        %% {cnode, CNodeNumber, Result} ->
+        %%     Result        
         {cnode, Result} ->
             Result
     after 
