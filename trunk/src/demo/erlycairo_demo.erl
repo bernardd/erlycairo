@@ -50,11 +50,11 @@ start() ->
    
 %% if you run other C-Nodes as well, to avoid nodename conflicts   
 start(CNodeNumber) ->   
-    erlycairo:start_link(CNodeNumber).
+    erlycairo_server:start_link(CNodeNumber).
     
     
 stop() ->   
-    erlycairo:stop().
+    erlycairo_server:stop().
           
     
 create_images()->
@@ -66,13 +66,13 @@ create_images()->
 %% ============================================
 
 rect(File, Width, Height, {Red, Green, Blue, Alpha}) ->
-    case erlycairo:new_image_blank(Width, Height) of
+    case erlycairo_server:new_image_blank(Width, Height) of
         ok ->
-            erlycairo:set_source_rgba(Red, Green, Blue, Alpha),
-            erlycairo:rectangle(0, 0, Width, Height), 
-            erlycairo:fill(),
-            erlycairo:write_to_png(File),
-            erlycairo:close_image(),
+            erlycairo_server:set_source_rgba(Red, Green, Blue, Alpha),
+            erlycairo_server:rectangle(0, 0, Width, Height), 
+            erlycairo_server:fill(),
+            erlycairo_server:write_to_png(File),
+            erlycairo_server:close_image(),
             ok;
         {error, Reason} ->
             exit(Reason)

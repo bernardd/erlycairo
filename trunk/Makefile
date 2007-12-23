@@ -1,9 +1,10 @@
 ERL=erl
-APP_NAME=erlycairo_demo
+APP_NAME=erlycairo
 NODE_NAME=$(APP_NAME)
 
 all: 
-	$(ERL) -make
+	( $(ERL) -make && \
+	if [ ! -e ebin/$(APP_NAME).app ]; then cp -f src/$(APP_NAME)/$(APP_NAME).app.src ebin/$(APP_NAME).app; fi )
 
 c-node:
 	( cd c_src && $(MAKE) )
@@ -19,7 +20,7 @@ run:
 	-sname $(NODE_NAME)
 		
 clean:
-	rm -fv ebin/*
+	rm -fv ebin/*.beam
 	rm -fv erl_crash.dump
 
 clean-c-node:
