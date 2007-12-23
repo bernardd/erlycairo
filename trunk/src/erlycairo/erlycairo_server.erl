@@ -78,8 +78,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {cnode,
-                port}).
+-record(state, {cnode, cnode_number, port}).
 
 %%====================================================================
 %% API
@@ -436,7 +435,7 @@ init(CNodeNumber) ->
     Port = open_port({spawn, Cmd}, []),   
     HostName = string:strip(os:cmd("hostname -s"), right, $\n),
     CNodeName = lists:concat(["c", CNodeNumber, "@", HostName]),
-    {ok, #state{cnode = list_to_atom(CNodeName), port=Port}}.
+    {ok, #state{cnode_number = CNodeNumber, cnode = list_to_atom(CNodeName), port=Port}}.
 
 %%--------------------------------------------------------------------
 %% @spec 
@@ -450,11 +449,11 @@ init(CNodeNumber) ->
 %% @end 
 %%--------------------------------------------------------------------
 handle_call(stop, _From, State) ->
-    call_cnode(State#state.cnode, {stop, {}}),
+    call_cnode(State#state.cnode, State#state.cnode_number, {stop, {}}),
     {stop, normal, State};
     
 handle_call(Msg, _From, State) ->
-    Reply = call_cnode(State#state.cnode, Msg),
+    Reply = call_cnode(State#state.cnode, State#state.cnode_number, Msg),
     {reply, Reply, State}.
 
 %%--------------------------------------------------------------------
@@ -502,13 +501,10 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-call_cnode(CNode, Msg) ->
+call_cnode(CNode, CNodeNumber, Msg) ->    
     {any, CNode} ! {call, self(), Msg},
-    receive
-        %% TODO: receive only from our CNode with specific CNodeNumber
-        %% {cnode, CNodeNumber, Result} ->
-        %%     Result        
-        {cnode, Result} ->
+    receive      
+        {cnode, CNodeNumber, Result} ->
             Result
     after 
         ?TIMEOUT ->

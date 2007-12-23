@@ -34,28 +34,13 @@
 -module(erlycairo_demo).
 -author('rsaccon@gmail.com').
 
--export([start/0,
-    start/1,
-    stop/0,
-    create_images/0]).
+-export([create_images/0]).
  
 
 %%=====================================================================
 %%  API Functions
 %%=====================================================================
 
-start() ->   
-   erlycairo:start_link().
-  
-   
-%% if you run other C-Nodes as well, to avoid nodename conflicts   
-start(CNodeNumber) ->   
-    erlycairo_server:start_link(CNodeNumber).
-    
-    
-stop() ->   
-    erlycairo_server:stop().
-          
     
 create_images()->
     rect("images/rect.png", 100, 100, {1.0, 0.2, 0.7, 1.0}).

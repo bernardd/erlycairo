@@ -52,13 +52,10 @@
 %% top supervisor of the tree.
 %% @end 
 %%--------------------------------------------------------------------
+start(_Type, []) ->
+    erlycairo_sup:start_link();  
 start(_Type, StartArgs) ->
-    case 'TopSupervisor':start_link(StartArgs) of
-        {ok, Pid} -> 
-            {ok, Pid};
-        Error ->
-            Error
-    end.
+    erlycairo_sup:start_link(StartArgs).
 
 %%--------------------------------------------------------------------
 %% @spec stop(State) -> void()

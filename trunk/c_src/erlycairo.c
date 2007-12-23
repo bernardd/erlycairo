@@ -64,28 +64,31 @@ int main(int argc, char *argv[]) {
   int fd;                      /* fd to Erlang node */
   unsigned char buf[BUFSIZE];  /* Buffer for incoming message */
   ErlMessage emsg;             /* Incoming message */
-  int number;                  /* C-Node number */
+  int cnode_number;            /* C-Node number */
   char *cookie;                /* Shared cookie */
   short creation;              /* ?? */
   char *erlang_node;           /* Erlang node to connect to */
   ETERM *fromp, *msgp, *fnp, *argp, *resp;
   int received, status, loop = 1;
 
-  if (argc < 4)
+  if (argc < 4) {
     erl_err_quit("invalid_args");
-    
-  number = atoi(argv[1]);
+  }
+  
+  cnode_number = atoi(argv[1]);
   cookie = argv[2];
   creation = 0;
   erlang_node = argv[3];
   
   erl_init(NULL, 0);
   
-  if (!erl_connect_init(number, cookie, creation))
+  if (!erl_connect_init(cnode_number, cookie, creation)) {
     erl_err_quit("erl_connect_init");
+  }
 
-  if ((fd = erl_connect(erlang_node)) < 0)
+  if ((fd = erl_connect(erlang_node)) < 0) {
     erl_err_quit("erl_connect"); 
+  }
      
   while (loop) {
     received = erl_receive_msg(fd, buf, BUFSIZE, &emsg);
@@ -167,11 +170,11 @@ int main(int argc, char *argv[]) {
         }
         
         if (status == 0) {
-          resp = erl_format("{cnode, ok}");
+          resp = erl_format("{cnode, ~i, ok}", cnode_number);
         } else if (status > 0) {
-          resp = erl_format("{cnode, {error, '~s'}}", cairo_status_to_string(status));
+          resp = erl_format("{cnode, ~i, {error, '~s'}}", cnode_number, cairo_status_to_string(status));
         } else {
-          resp = erl_format("{cnode, {error, '~s'}}", "todo: erlycairo_status_to_string(status)");
+          resp = erl_format("{cnode, ~i, {error, '~s'}}", cnode_number, "status_not_implemented_yet");
         }
         erl_send(fd, fromp, resp);
 
