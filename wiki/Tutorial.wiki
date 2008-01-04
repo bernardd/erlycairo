@@ -1,0 +1,28 @@
+#summary Tutorial and basic examples
+#labels Featured
+
+===Tutorial:===
+First start the OTP server:
+{{{
+application:start(erlycairo).
+}}}
+(this is done automatically if you type `make run`)
+
+Example copy-pasted from the demo application:
+{{{    
+create_images()->
+    rect("images/rect.png", 100, 100, {1.0, 0.2, 0.7, 1.0}).  
+
+rect(File, Width, Height, {Red, Green, Blue, Alpha}) ->
+    case erlycairo:new_image_blank(Width, Height) of
+        ok ->
+            erlycairo:set_source_rgba(Red, Green, Blue, Alpha),
+            erlycairo:rectangle(0, 0, Width, Height), 
+            erlycairo:fill(),
+            erlycairo:write_to_png(File),
+            erlycairo:close_image(),
+            ok;
+        {error, Reason} ->
+            exit(Reason)
+    end.
+}}}
