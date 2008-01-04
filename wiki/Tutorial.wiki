@@ -1,7 +1,6 @@
-#summary Tutorial and basic examples
+#summary How to get started with a basic example
 #labels Featured
 
-===Tutorial:===
 First start the OTP server:
 {{{
 application:start(erlycairo).
