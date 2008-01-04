@@ -1,4 +1,4 @@
-#summary How to get started with a basic example
+#summary First steps with a basic example
 #labels Featured
 
 First start the OTP server:
