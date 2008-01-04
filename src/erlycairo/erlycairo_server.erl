@@ -50,6 +50,7 @@
     save/0,
     restore/0,
     set_line_width/1,
+    set_source_rgba/1,
     set_source_rgba/4,
     set_operator/1,
     move_to/2,
@@ -72,7 +73,8 @@
     rotate/1,
     select_font_face/3,
     set_font_size/1,
-    show_text/1]).
+    show_text/1,
+    text_extents/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -173,6 +175,19 @@ set_line_width(Width) ->
     gen_server:call(?MODULE, {set_line_width, {Width}}).
 
 
+%%--------------------------------------------------------------------
+%% @spec ({(Red::integer() | Red::float()),
+%%     (Green::integer() | Green::float()),
+%%     (Blue::integer() | Blue::float()),
+%%     (Alpha::integer() | Alpha::float())}) -> (ok | {error, Reason})
+%% @doc
+%% Sets the current line width within the cairo context.
+%% @end 
+%%--------------------------------------------------------------------
+set_source_rgba({_Red, _Green, _Blue, _Alpha} = Color) ->
+    gen_server:call(?MODULE, {set_source_rgba, Color}).
+   
+        
 %%--------------------------------------------------------------------
 %% @spec ((Red::integer() | Red::float()),
 %%        (Green::integer() | Green::float()),
@@ -413,7 +428,18 @@ set_font_size(Size) ->
 show_text(Text) ->
     gen_server:call(?MODULE, {show_text, {list_to_atom(Text)}}).   
    
-        
+
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+text_extents(Text) ->
+    io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, text_extents]),
+    Res = gen_server:call(?MODULE, {text_extents, {list_to_atom(Text)}}),
+    io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, Res]),
+    ok.
+            
         
 %%====================================================================
 %% gen_server callbacks
@@ -504,8 +530,10 @@ code_change(_OldVsn, State, _Extra) ->
 call_cnode(CNode, CNodeNumber, Msg) ->    
     {any, CNode} ! {call, self(), Msg},
     receive      
-        {cnode, CNodeNumber, Result} ->
-            Result
+        {c_node, CNodeNumber, Result} ->
+            Result;
+        Other ->
+            io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, Other])
     after 
         ?TIMEOUT ->
             %% TODO: proper errorlogging
