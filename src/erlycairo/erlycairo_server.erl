@@ -528,7 +528,7 @@ call_cnode(CNode, CNodeNumber, Msg) ->
     {any, CNode} ! {call, self(), Msg},
     receive      
         {c_node, CNodeNumber, Result} ->
-            Result;
+            Result
     after 
         ?TIMEOUT ->
             %% TODO: proper errorlogging
