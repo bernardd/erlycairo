@@ -435,10 +435,7 @@ show_text(Text) ->
 %% @end 
 %%--------------------------------------------------------------------
 text_extents(Text) ->
-    io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, text_extents]),
-    Res = gen_server:call(?MODULE, {text_extents, {list_to_atom(Text)}}),
-    io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, Res]),
-    ok.
+    gen_server:call(?MODULE, {text_extents, {list_to_atom(Text)}}).
             
         
 %%====================================================================
@@ -532,8 +529,6 @@ call_cnode(CNode, CNodeNumber, Msg) ->
     receive      
         {c_node, CNodeNumber, Result} ->
             Result;
-        Other ->
-            io:format("TRACE ~p:~p ~p~n",[?MODULE, ?LINE, Other])
     after 
         ?TIMEOUT ->
             %% TODO: proper errorlogging
