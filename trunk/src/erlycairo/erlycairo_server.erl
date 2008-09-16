@@ -74,7 +74,13 @@
     select_font_face/3,
     set_font_size/1,
     show_text/1,
-    text_extents/1]).
+    text_extents/1,
+    surface_create_from_png/1,
+    surface_get_width/1,
+    surface_get_height/1,
+    surface_destroy/1,
+    set_source_surface/3,
+    write_to_png_stream/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -437,7 +443,61 @@ show_text(Text) ->
 text_extents(Text) ->
     gen_server:call(?MODULE, {text_extents, {list_to_atom(Text)}}).
             
-        
+
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+surface_create_from_png(Filename) ->
+    gen_server:call(?MODULE, {surface_create_from_png, {list_to_atom(Filename)}}).
+      
+  
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+surface_get_width(Surface) ->
+    gen_server:call(?MODULE, {surface_get_width, {Surface}}).
+
+
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+surface_get_height(Surface) ->
+    gen_server:call(?MODULE, {surface_get_height, {Surface}}).
+
+
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+surface_destroy(Surface) ->
+    gen_server:call(?MODULE, {surface_destroy, {Surface}}).
+
+
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+set_source_surface(Surface, X, Y) ->
+    gen_server:call(?MODULE, {set_source_surface, {Surface, X, Y}}).
+
+
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+write_to_png_stream() ->
+    gen_server:call(?MODULE, {write_to_png_stream, {}}).
+
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================

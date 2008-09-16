@@ -89,6 +89,12 @@ ETERM * select_font_face(ETERM* from, ETERM* arg, int c_node);
 ETERM * set_font_size(ETERM* from, ETERM* arg, int c_node);
 ETERM * show_text(ETERM* from, ETERM* arg, int c_node);
 ETERM * text_extents(ETERM* from, ETERM* arg, int c_node);
+ETERM * surface_create_from_png(ETERM *from, ETERM* arg, int c_node);
+ETERM * surface_get_width(ETERM *from, ETERM* arg, int c_node);
+ETERM * surface_get_height(ETERM *from, ETERM* arg, int c_node);
+ETERM * surface_destroy(ETERM *from, ETERM* arg, int c_node);
+ETERM * set_source_surface(ETERM *from, ETERM* arg, int c_node);
+ETERM * write_to_png_stream(ETERM *from, ETERM* arg, int c_node);
 
 
 int main(int argc, char *argv[]) {     
@@ -198,6 +204,18 @@ int main(int argc, char *argv[]) {
                 resp = show_text(fromp, argp, c_node);
             } else if (is_function(fnp, "text_extents")) {
                 resp = text_extents(fromp, argp, c_node);          
+            } else if (is_function(fnp, "surface_create_from_png")) {
+                resp = surface_create_from_png(fromp, argp, c_node);          
+            } else if (is_function(fnp, "surface_get_width")) {
+                resp = surface_get_width(fromp, argp, c_node);          
+            } else if (is_function(fnp, "surface_get_height")) {
+                resp = surface_get_height(fromp, argp, c_node);          
+            } else if (is_function(fnp, "surface_destroy")) {
+                resp = surface_destroy(fromp, argp, c_node);          
+            } else if (is_function(fnp, "set_source_surface")) {
+                resp = set_source_surface(fromp, argp, c_node);          
+            } else if (is_function(fnp, "write_to_png_stream")) {
+                resp = write_to_png_stream(fromp, argp, c_node);          
             } else {
                 resp = erl_format("{c_node, ~i, {error, '~s'}}", c_node, "unknown command");
             }         
@@ -217,7 +235,7 @@ int main(int argc, char *argv[]) {
 
 
 int is_function(ETERM *fn, char *fn_name) {
-    return (strncmp((char *)ERL_ATOM_PTR(fn), fn_name, strlen(fn_name)) == 0);
+    return (strcmp((char *)ERL_ATOM_PTR(fn), fn_name) == 0);
 }
 
 
@@ -230,6 +248,12 @@ double val(ETERM *arg) {
         exit(EXIT_FAILURE);
         return 0;
     }
+}
+
+void *ptr(ETERM *arg) {
+	if (ERL_IS_INTEGER(arg))
+		return (void*)ERL_INT_VALUE(arg);
+	return NULL;
 }
 
 
@@ -743,6 +767,108 @@ ETERM * text_extents(ETERM* from, ETERM* arg, int c_node) {
         cairo_text_extents (ctx->cr, (char *)ERL_ATOM_PTR(text), &extents);        
         erl_free_term(text);
         return erl_format("{c_node, ~i, {~f, ~f}}", c_node, extents.width, extents.height);
+    } else { 
+        return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
+    }
+}
+
+
+ETERM * surface_create_from_png(ETERM *from, ETERM* arg, int c_node) {
+    ETERM *file;
+    file = erl_element(1, arg); 
+    cairo_surface_t *surface = cairo_image_surface_create_from_png((char *)ERL_ATOM_PTR(file));
+    erl_free_term(file);
+    return erl_format("{c_node, ~i, {ok, ~i}}", c_node, surface);
+}
+
+
+ETERM * surface_get_width(ETERM *from, ETERM* arg, int c_node) {
+    ETERM *surface;
+    surface = erl_element(1, arg); 
+    int w = cairo_image_surface_get_width(ptr(surface));
+    erl_free_term(surface);
+    return erl_format("{c_node, ~i, {ok, ~i}}", c_node, w);
+}
+
+ETERM * surface_get_height(ETERM *from, ETERM* arg, int c_node) {
+    ETERM *surface;
+    surface = erl_element(1, arg); 
+    int h = cairo_image_surface_get_height(ptr(surface));
+    erl_free_term(surface);
+    return erl_format("{c_node, ~i, {ok, ~i}}", c_node, h);
+}
+
+
+ETERM * surface_destroy(ETERM *from, ETERM* arg, int c_node) {
+    ETERM *surface;
+    surface = erl_element(1, arg); 
+    cairo_surface_destroy(ptr(surface));
+    erl_free_term(surface);
+    return erl_format("{c_node, ~i, ok}", c_node);
+}
+
+
+ETERM * set_source_surface(ETERM *from, ETERM* arg, int c_node) {
+    ETERM *surface, *x, *y;
+    cairo_context *ctx = get_cairo_context(from);
+    if (ctx) {
+        surface = erl_element(1, arg); 
+        x = erl_element(2, arg);
+        y = erl_element(3, arg);
+        cairo_set_source_surface(ctx->cr, ptr(surface), val(x), val(y));
+        erl_free_term(surface);
+        erl_free_term(x);
+        erl_free_term(y);
+        return erl_format("{c_node, ~i, ok}", c_node);
+    } else {
+        return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
+    }
+}
+
+
+struct png_data
+{
+    unsigned int size;
+    unsigned int written;
+    unsigned char *buf;
+};
+
+cairo_status_t write_cb(void *closure, const unsigned char *data, unsigned int length) {
+    struct png_data *out = (struct png_data*)closure;
+
+    // TODO: smarter allocation...
+    if (length + out->written > out->size) {
+        out->size = length + out->written;
+        out->buf = realloc(out->buf, out->size);
+    }
+
+    memcpy(out->buf + out->written, data, length);
+    out->written = out->size;
+    return CAIRO_STATUS_SUCCESS;
+}
+
+ETERM * write_to_png_stream(ETERM *from, ETERM* arg, int c_node) {
+    int status;
+    cairo_context *ctx = get_cairo_context(from);
+    if (ctx) { 
+        struct png_data out = {};
+        status = cairo_surface_write_to_png_stream(ctx->sf, write_cb, &out);
+        ETERM *term = NULL;
+
+        ei_x_buff req;
+        ei_x_new_with_version(&req);
+        ei_x_encode_tuple_header(&req, 3);
+        ei_x_encode_atom(&req, "c_node");
+        ei_x_encode_long(&req, c_node);
+        ei_x_encode_tuple_header(&req, 2);
+        ei_x_encode_atom(&req, "ok");
+        ei_x_encode_binary(&req, out.buf, out.written);
+
+        int index = 0;
+        ei_decode_term(req.buff, &index, &term);
+        ei_x_free(&req);
+        free(out.buf);
+        return term;
     } else { 
         return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
     }
