@@ -34,7 +34,7 @@
 -module(erlycairo_demo).
 -author('rsaccon@gmail.com').
 
--export([create_images/0]).
+-export([create_images/0, scale/3]).
  
 
 %%=====================================================================
@@ -45,6 +45,18 @@
 create_images()->
     rect("images/rect.png", 100, 100, {1.0, 0.2, 0.7, 1.0}).
      
+scale(File, X, Y) ->
+	{ok, S} = erlycairo_server:surface_create_from_png(File),
+	{ok, Width} = erlycairo_server:surface_get_width(S),
+	{ok, Height} = erlycairo_server:surface_get_height(S),
+	erlycairo_server:new_image_blank(Width * X, Height * Y),
+	erlycairo_server:scale(X, Y),
+	erlycairo_server:set_source_surface(S, 0, 0),
+	erlycairo_server:paint(),
+	{ok, Stream} = erlycairo_server:write_to_png_stream(),
+	erlycairo_server:surface_destroy(S),
+	erlycairo_server:close_image(),
+	Stream.
 
 %% ============================================
 %% Internal functions
@@ -62,3 +74,4 @@ rect(File, Width, Height, {Red, Green, Blue, Alpha}) ->
         {error, Reason} ->
             exit(Reason)
     end.
+
