@@ -49,13 +49,13 @@ scale(File, X, Y) ->
 	{ok, S} = erlycairo_server:surface_create_from_png(File),
 	{ok, Width} = erlycairo_server:surface_get_width(S),
 	{ok, Height} = erlycairo_server:surface_get_height(S),
-	erlycairo_server:new_image_blank(Width * X, Height * Y),
-	erlycairo_server:scale(X, Y),
-	erlycairo_server:set_source_surface(S, 0, 0),
-	erlycairo_server:paint(),
-	{ok, Stream} = erlycairo_server:write_to_png_stream(),
+	{ok, Ctx} = erlycairo_server:new_image_blank(Width * X, Height * Y),
+	erlycairo_server:scale(Ctx, X, Y),
+	erlycairo_server:set_source_surface(Ctx, S, 0, 0),
+	erlycairo_server:paint(Ctx),
+	{ok, Stream} = erlycairo_server:write_to_png_stream(Ctx),
 	erlycairo_server:surface_destroy(S),
-	erlycairo_server:close_image(),
+	erlycairo_server:close_image(Ctx),
 	Stream.
 
 %% ============================================
@@ -64,12 +64,12 @@ scale(File, X, Y) ->
 
 rect(File, Width, Height, {Red, Green, Blue, Alpha}) ->
     case erlycairo_server:new_image_blank(Width, Height) of
-        ok ->
-            erlycairo_server:set_source_rgba(Red, Green, Blue, Alpha),
-            erlycairo_server:rectangle(0, 0, Width, Height), 
-            erlycairo_server:fill(),
-            erlycairo_server:write_to_png(File),
-            erlycairo_server:close_image(),
+        {ok, Ctx} ->
+            erlycairo_server:set_source_rgba(Ctx, Red, Green, Blue, Alpha),
+            erlycairo_server:rectangle(Ctx, 0, 0, Width, Height), 
+            erlycairo_server:fill(Ctx),
+            erlycairo_server:write_to_png(Ctx, File),
+            erlycairo_server:close_image(Ctx),
             ok;
         {error, Reason} ->
             exit(Reason)

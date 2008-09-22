@@ -38,49 +38,49 @@
 -behaviour(gen_server).
 
 -define(DEFAULT_CNODE_NUMBER, 1).
--define(TIMEOUT, 1000).
+-define(TIMEOUT, 10000). % Operations on large images can take some time
 
 %% API
 -export([start_link/0, 
     start_link/1,
     stop/0,
     new_image_blank/2,
-    write_to_png/1,
-    close_image/0,
-    save/0,
-    restore/0,
-    set_line_width/1,
-    set_source_rgba/1,
-    set_source_rgba/4,
-    set_operator/1,
-    move_to/2,
-    line_to/2,
-    curve_to/6,
-    rel_move_to/2,
-    rel_line_to/2,
-    rel_curve_to/6,
-    rectangle/4,
-    arc/5,
-    arc_negative/5,
-    close_path/0,
-    paint/0,
-    fill/0,
-    fill_preserve/0,
-    stroke/0,
-    stroke_preserve/0,
-    translate/2,
-    scale/2,
-    rotate/1,
-    select_font_face/3,
-    set_font_size/1,
-    show_text/1,
-    text_extents/1,
+    write_to_png/2,
+    close_image/1,
+    save/1,
+    restore/1,
+    set_line_width/2,
+    set_source_rgba/2,
+    set_source_rgba/5,
+    set_operator/2,
+    move_to/3,
+    line_to/3,
+    curve_to/7,
+    rel_move_to/3,
+    rel_line_to/3,
+    rel_curve_to/7,
+    rectangle/5,
+    arc/6,
+    arc_negative/6,
+    close_path/1,
+    paint/1,
+    fill/1,
+    fill_preserve/1,
+    stroke/1,
+    stroke_preserve/1,
+    translate/3,
+    scale/3,
+    rotate/2,
+    select_font_face/4,
+    set_font_size/2,
+    show_text/2,
+    text_extents/2,
     surface_create_from_png/1,
     surface_get_width/1,
     surface_get_height/1,
     surface_destroy/1,
-    set_source_surface/3,
-    write_to_png_stream/0]).
+    set_source_surface/4,
+    write_to_png_stream/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -138,8 +138,8 @@ new_image_blank(Width, Height) ->
 %% Saves image as PNG file.
 %% @end 
 %%--------------------------------------------------------------------
-write_to_png(Filename) ->
-    gen_server:call(?MODULE, {write_to_png, {list_to_atom(Filename)}}).
+write_to_png(Ctx, Filename) ->
+    gen_server:call(?MODULE, {write_to_png, {Ctx, list_to_atom(Filename)}}).
 
 
 %%--------------------------------------------------------------------
@@ -148,8 +148,8 @@ write_to_png(Filename) ->
 %% Closes image.
 %% @end 
 %%--------------------------------------------------------------------
-close_image() ->
-    gen_server:call(?MODULE, {close_image, {}}).
+close_image(Ctx) ->
+    gen_server:call(?MODULE, {close_image, {Ctx}}).
 
 
 %%--------------------------------------------------------------------
@@ -158,8 +158,8 @@ close_image() ->
 %% Saves current drawing context to stack.
 %% @end 
 %%--------------------------------------------------------------------
-save() ->
-    gen_server:call(?MODULE, {save, {}}).
+save(Ctx) ->
+    gen_server:call(?MODULE, {save, {Ctx}}).
    
 %%--------------------------------------------------------------------
 %% @spec () -> (ok | {error, Reason})
@@ -167,8 +167,8 @@ save() ->
 %% Resores last drawing context from stack.
 %% @end 
 %%--------------------------------------------------------------------
-restore() ->
-    gen_server:call(?MODULE, {restore, {}}).
+restore(Ctx) ->
+    gen_server:call(?MODULE, {restore, {Ctx}}).
 
 
 %%--------------------------------------------------------------------
@@ -177,8 +177,8 @@ restore() ->
 %% Sets the current line width within the cairo context.
 %% @end 
 %%--------------------------------------------------------------------
-set_line_width(Width) ->
-    gen_server:call(?MODULE, {set_line_width, {Width}}).
+set_line_width(Ctx, Width) ->
+    gen_server:call(?MODULE, {set_line_width, {Ctx, Width}}).
 
 
 %%--------------------------------------------------------------------
@@ -190,8 +190,8 @@ set_line_width(Width) ->
 %% Sets the current line width within the cairo context.
 %% @end 
 %%--------------------------------------------------------------------
-set_source_rgba({_Red, _Green, _Blue, _Alpha} = Color) ->
-    gen_server:call(?MODULE, {set_source_rgba, Color}).
+set_source_rgba(Ctx, {_Red, _Green, _Blue, _Alpha} = Color) ->
+    gen_server:call(?MODULE, {set_source_rgba, list_to_tuple([Ctx | tuple_to_list(Color)])}).
    
         
 %%--------------------------------------------------------------------
@@ -203,8 +203,8 @@ set_source_rgba({_Red, _Green, _Blue, _Alpha} = Color) ->
 %% Sets the current line width within the cairo context.
 %% @end 
 %%--------------------------------------------------------------------
-set_source_rgba(Red, Green, Blue, Alpha) ->
-    gen_server:call(?MODULE, {set_source_rgba, {Red, Green, Blue, Alpha}}).
+set_source_rgba(Ctx, Red, Green, Blue, Alpha) ->
+    gen_server:call(?MODULE, {set_source_rgba, {Ctx, Red, Green, Blue, Alpha}}).
 
 
 %%--------------------------------------------------------------------
@@ -213,8 +213,8 @@ set_source_rgba(Red, Green, Blue, Alpha) ->
 %% Sets the current operator within the cairo context.
 %% @end 
 %%--------------------------------------------------------------------
-set_operator(Operator) ->
-    gen_server:call(?MODULE, {set_operator, {Operator}}).
+set_operator(Ctx, Operator) ->
+    gen_server:call(?MODULE, {set_operator, {Ctx, Operator}}).
 
 
 %%--------------------------------------------------------------------
@@ -224,8 +224,8 @@ set_operator(Operator) ->
 %% Starts a new subpath, current point will be (X, Y).
 %% @end 
 %%--------------------------------------------------------------------
-move_to(X, Y) ->
-    gen_server:call(?MODULE, {move_to, {X, Y}}).
+move_to(Ctx, X, Y) ->
+    gen_server:call(?MODULE, {move_to, {Ctx, X, Y}}).
 
 
 %%--------------------------------------------------------------------
@@ -235,8 +235,8 @@ move_to(X, Y) ->
 %% Adds a line to the path from the current point to position (X, Y)
 %% @end 
 %%--------------------------------------------------------------------
-line_to(X, Y) ->
-    gen_server:call(?MODULE, {line_to, {X, Y}}).
+line_to(Ctx, X, Y) ->
+    gen_server:call(?MODULE, {line_to, {Ctx, X, Y}}).
 
 
 %%--------------------------------------------------------------------
@@ -250,8 +250,8 @@ line_to(X, Y) ->
 %% Adds a cubic Bezier spline to the path from the current point to position (X3, Y3)
 %% @end 
 %%--------------------------------------------------------------------
-curve_to(X1, Y1, X2, Y2, X3, Y3) ->
-    gen_server:call(?MODULE, {curve_to, {X1, Y1, X2, Y2, X3, Y3}}).
+curve_to(Ctx, X1, Y1, X2, Y2, X3, Y3) ->
+    gen_server:call(?MODULE, {curve_to, {Ctx, X1, Y1, X2, Y2, X3, Y3}}).
 
 
 %%--------------------------------------------------------------------
@@ -261,8 +261,8 @@ curve_to(X1, Y1, X2, Y2, X3, Y3) ->
 %% Relative-coordinate version of move_to().
 %% @end 
 %%--------------------------------------------------------------------
-rel_move_to(X, Y) ->
-    gen_server:call(?MODULE, {rel_move_to, {X, Y}}).
+rel_move_to(Ctx, X, Y) ->
+    gen_server:call(?MODULE, {rel_move_to, {Ctx, X, Y}}).
 
 
 %%--------------------------------------------------------------------
@@ -272,8 +272,8 @@ rel_move_to(X, Y) ->
 %% Relative-coordinate version of line_to().
 %% @end 
 %%--------------------------------------------------------------------
-rel_line_to(X, Y) ->
-    gen_server:call(?MODULE, {rel_line_to, {X, Y}}).
+rel_line_to(Ctx, X, Y) ->
+    gen_server:call(?MODULE, {rel_line_to, {Ctx, X, Y}}).
 
 
 %%--------------------------------------------------------------------
@@ -287,8 +287,8 @@ rel_line_to(X, Y) ->
 %% Relative-coordinate version of curve_to() to position (X3, Y3)
 %% @end 
 %%--------------------------------------------------------------------
-rel_curve_to(X1, Y1, X2, Y2, X3, Y3) ->
-    gen_server:call(?MODULE, {rel_curve_to, {X1, Y1, X2, Y2, X3, Y3}}).
+rel_curve_to(Ctx, X1, Y1, X2, Y2, X3, Y3) ->
+    gen_server:call(?MODULE, {rel_curve_to, {Ctx, X1, Y1, X2, Y2, X3, Y3}}).
 
 
 %%--------------------------------------------------------------------
@@ -300,8 +300,8 @@ rel_curve_to(X1, Y1, X2, Y2, X3, Y3) ->
 %% Adds a closed sub-path rectangle of the given size to the current path at position (X, Y)
 %% @end 
 %%--------------------------------------------------------------------
-rectangle(X, Y, Width, Height) ->
-    gen_server:call(?MODULE, {rectangle, {X, Y, Width, Height}}).
+rectangle(Ctx, X, Y, Width, Height) ->
+    gen_server:call(?MODULE, {rectangle, {Ctx, X, Y, Width, Height}}).
 
 
 %%--------------------------------------------------------------------
@@ -311,8 +311,8 @@ rectangle(X, Y, Width, Height) ->
 %% current path at position (X, Y)
 %% @end 
 %%--------------------------------------------------------------------
-arc(X, Y, Radius, Ang1e1, Angle2) ->
-     gen_server:call(?MODULE, {arc, {X, Y, Radius, Ang1e1, Angle2}}).
+arc(Ctx, X, Y, Radius, Ang1e1, Angle2) ->
+     gen_server:call(?MODULE, {arc, {Ctx, X, Y, Radius, Ang1e1, Angle2}}).
 
 
 %%--------------------------------------------------------------------
@@ -322,8 +322,8 @@ arc(X, Y, Radius, Ang1e1, Angle2) ->
 %% current path at position (X, Y)
 %% @end 
 %%--------------------------------------------------------------------
-arc_negative(X, Y, Radius, Ang1e1, Angle2) ->
-     gen_server:call(?MODULE, {arc_negative, {X, Y, Radius, Ang1e1, Angle2}}).
+arc_negative(Ctx, X, Y, Radius, Ang1e1, Angle2) ->
+     gen_server:call(?MODULE, {arc_negative, {Ctx, X, Y, Radius, Ang1e1, Angle2}}).
 
 
 %%--------------------------------------------------------------------
@@ -332,8 +332,8 @@ arc_negative(X, Y, Radius, Ang1e1, Angle2) ->
 %% Closes the Path
 %% @end 
 %%--------------------------------------------------------------------
-close_path() ->
-    gen_server:call(?MODULE, {close_path, {}}).
+close_path(Ctx) ->
+    gen_server:call(?MODULE, {close_path, {Ctx}}).
 
 
 %%--------------------------------------------------------------------
@@ -341,8 +341,8 @@ close_path() ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-paint() ->
-    gen_server:call(?MODULE, {paint, {}}).
+paint(Ctx) ->
+    gen_server:call(?MODULE, {paint, {Ctx}}).
 
 
 %%--------------------------------------------------------------------
@@ -350,8 +350,8 @@ paint() ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-fill() ->
-    gen_server:call(?MODULE, {fill, {}}).
+fill(Ctx) ->
+    gen_server:call(?MODULE, {fill, {Ctx}}).
 
 
 %%--------------------------------------------------------------------
@@ -359,8 +359,8 @@ fill() ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-fill_preserve() ->
-    gen_server:call(?MODULE, {fill_preserve, {}}).
+fill_preserve(Ctx) ->
+    gen_server:call(?MODULE, {fill_preserve, {Ctx}}).
     
     
 %%--------------------------------------------------------------------
@@ -368,8 +368,8 @@ fill_preserve() ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-stroke() ->
-    gen_server:call(?MODULE, {stroke, {}}).
+stroke(Ctx) ->
+    gen_server:call(?MODULE, {stroke, {Ctx}}).
 
 
 %%--------------------------------------------------------------------
@@ -377,8 +377,8 @@ stroke() ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-stroke_preserve() ->
-    gen_server:call(?MODULE, {stroke_preserve, {}}).
+stroke_preserve(Ctx) ->
+    gen_server:call(?MODULE, {stroke_preserve, {Ctx}}).
 
 
 %%--------------------------------------------------------------------
@@ -386,8 +386,8 @@ stroke_preserve() ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-translate(TX, TY) ->
-    gen_server:call(?MODULE, {translate, {TX, TY}}).
+translate(Ctx, TX, TY) ->
+    gen_server:call(?MODULE, {translate, {Ctx, TX, TY}}).
 
 
 %%--------------------------------------------------------------------
@@ -395,8 +395,8 @@ translate(TX, TY) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-scale(SX, SY) ->
-    gen_server:call(?MODULE, {scale, {SX, SY}}).
+scale(Ctx, SX, SY) ->
+    gen_server:call(?MODULE, {scale, {Ctx, SX, SY}}).
 
 
 %%--------------------------------------------------------------------
@@ -404,8 +404,8 @@ scale(SX, SY) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-rotate(Angle) ->
-    gen_server:call(?MODULE, {rotate, {Angle}}).
+rotate(Ctx, Angle) ->
+    gen_server:call(?MODULE, {rotate, {Ctx, Angle}}).
 
 
 %%--------------------------------------------------------------------
@@ -413,8 +413,8 @@ rotate(Angle) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-select_font_face(Family, Slant, Weight) ->
-    gen_server:call(?MODULE, {select_font_face, {list_to_atom(Family), Slant, Weight}}).
+select_font_face(Ctx, Family, Slant, Weight) ->
+    gen_server:call(?MODULE, {select_font_face, {Ctx, list_to_atom(Family), Slant, Weight}}).
 
 
 %%--------------------------------------------------------------------
@@ -422,8 +422,8 @@ select_font_face(Family, Slant, Weight) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-set_font_size(Size) ->
-    gen_server:call(?MODULE, {set_font_size, {Size}}).
+set_font_size(Ctx, Size) ->
+    gen_server:call(?MODULE, {set_font_size, {Ctx, Size}}).
 
 
 %%--------------------------------------------------------------------
@@ -431,8 +431,8 @@ set_font_size(Size) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-show_text(Text) ->
-    gen_server:call(?MODULE, {show_text, {list_to_atom(Text)}}).   
+show_text(Ctx, Text) ->
+    gen_server:call(?MODULE, {show_text, {Ctx, list_to_atom(Text)}}).   
    
 
 %%--------------------------------------------------------------------
@@ -440,8 +440,8 @@ show_text(Text) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-text_extents(Text) ->
-    gen_server:call(?MODULE, {text_extents, {list_to_atom(Text)}}).
+text_extents(Ctx, Text) ->
+    gen_server:call(?MODULE, {text_extents, {Ctx, list_to_atom(Text)}}).
             
 
 %%--------------------------------------------------------------------
@@ -485,8 +485,8 @@ surface_destroy(Surface) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-set_source_surface(Surface, X, Y) ->
-    gen_server:call(?MODULE, {set_source_surface, {Surface, X, Y}}).
+set_source_surface(Ctx, Surface, X, Y) ->
+    gen_server:call(?MODULE, {set_source_surface, {Ctx, Surface, X, Y}}).
 
 
 %%--------------------------------------------------------------------
@@ -494,8 +494,8 @@ set_source_surface(Surface, X, Y) ->
 %% @doc
 %% @end 
 %%--------------------------------------------------------------------
-write_to_png_stream() ->
-    gen_server:call(?MODULE, {write_to_png_stream, {}}).
+write_to_png_stream(Ctx) ->
+    gen_server:call(?MODULE, {write_to_png_stream, {Ctx}}).
 
 
 %%====================================================================
