@@ -1,11 +1,24 @@
 #summary First steps with a basic example
 #labels Featured
 
-First start the OTP server:
+To compile erlycairo from an SVN checkout (no tarballs available as yet)
 {{{
-application:start(erlycairo).
+aclocal
+autoconf
+automake -a
+./configure
+make
+sudo make install
 }}}
-(this is done automatically if you type `make run`)
+Now, fire up an Erlang VM with a node name:
+{{{
+erl -sname mynode
+}}}
+
+Now start the OTP server:
+{{{
+> application:start(erlycairo).
+}}}
 
 Example copy-pasted from the demo application:
 {{{    
@@ -13,15 +26,20 @@ create_images()->
     rect("images/rect.png", 100, 100, {1.0, 0.2, 0.7, 1.0}).  
 
 rect(File, Width, Height, {Red, Green, Blue, Alpha}) ->
-    case erlycairo:new_image_blank(Width, Height) of
-        ok ->
-            erlycairo:set_source_rgba(Red, Green, Blue, Alpha),
-            erlycairo:rectangle(0, 0, Width, Height), 
-            erlycairo:fill(),
-            erlycairo:write_to_png(File),
-            erlycairo:close_image(),
+    case erlycairo_server:new_image_blank(Width, Height) of
+        {ok, Ctx} ->
+            erlycairo_server:set_source_rgba(Ctx, Red, Green, Blue, Alpha),
+            erlycairo_server:rectangle(Ctx, 0, 0, Width, Height), 
+            erlycairo_server:fill(Ctx),
+            erlycairo_server:write_to_png(Ctx, File),
+            erlycairo_server:close_image(Ctx),
             ok;
         {error, Reason} ->
             exit(Reason)
     end.
+}}}
+
+This code is already available in the erlycairo_demo module.  To run it, just use:
+{{{
+> erlycairo_demo:create_images().
 }}}
