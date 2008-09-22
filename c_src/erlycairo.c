@@ -38,7 +38,6 @@
 #include <netinet/in.h>
 #include "erl_interface.h"
 #include "ei.h"
-#include "uthash.h"
 #include "cairo.h"
 
 
@@ -49,52 +48,48 @@
 typedef unsigned char byte;
 
 typedef struct _cairo_context {
-    char key[KEY_LENGTH]; 
     byte *cbuf;                /* Pointer to cairo buffer */
     cairo_surface_t *sf;       /* Pointer to cairo surface */
     cairo_t *cr;               /* Pointer to cairo structure */
-    UT_hash_handle hh;         /* makes this structure hashable */
 } cairo_context;
 
-cairo_context *cairo_context_hash = NULL;
 
-
-ETERM * new_image_blank(ETERM* from, ETERM *arg, int c_node);
-ETERM * write_to_png(ETERM* from, ETERM* arg, int c_node); 
-ETERM * close_image(ETERM* from, int c_node);   
-ETERM * save(ETERM* from, int c_node);
-ETERM * restore(ETERM* from, int c_node);
-ETERM * set_line_width(ETERM* from, ETERM* arg, int c_node);
-ETERM * set_source_rgba(ETERM* from, ETERM* arg, int c_node);
-ETERM * set_operator(ETERM* from, ETERM* arg, int c_node);
-ETERM * move_to(ETERM* from, ETERM* arg, int c_node);
-ETERM * line_to(ETERM* from, ETERM* arg, int c_node);
-ETERM * curve_to(ETERM* from, ETERM* arg, int c_node);
-ETERM * rel_move_to(ETERM* from, ETERM* arg, int c_node);
-ETERM * rel_line_to(ETERM* from, ETERM* arg, int c_node);
-ETERM * rel_curve_to(ETERM* from, ETERM* arg, int c_node);
-ETERM * rectangle(ETERM* from, ETERM* arg, int c_node);
-ETERM * arc(ETERM* from, ETERM* arg, int c_node);
-ETERM * arc_negative(ETERM* from, ETERM* arg, int c_node);
-ETERM * close_path(ETERM* from, int c_node);
-ETERM * paint(ETERM* from, int c_node);
-ETERM * fill(ETERM* from, int c_node);  
-ETERM * fill_preserve(ETERM* from, int c_node);   
-ETERM * stroke(ETERM* from, int c_node);
-ETERM * stroke_preserve(ETERM* from, int c_node);   
-ETERM * translate(ETERM* from, ETERM* arg, int c_node);
-ETERM * scale(ETERM* from, ETERM* arg, int c_node);
-ETERM * rotate(ETERM* from, ETERM* arg, int c_node);
-ETERM * select_font_face(ETERM* from, ETERM* arg, int c_node);
-ETERM * set_font_size(ETERM* from, ETERM* arg, int c_node);
-ETERM * show_text(ETERM* from, ETERM* arg, int c_node);
-ETERM * text_extents(ETERM* from, ETERM* arg, int c_node);
-ETERM * surface_create_from_png(ETERM *from, ETERM* arg, int c_node);
-ETERM * surface_get_width(ETERM *from, ETERM* arg, int c_node);
-ETERM * surface_get_height(ETERM *from, ETERM* arg, int c_node);
-ETERM * surface_destroy(ETERM *from, ETERM* arg, int c_node);
-ETERM * set_source_surface(ETERM *from, ETERM* arg, int c_node);
-ETERM * write_to_png_stream(ETERM *from, ETERM* arg, int c_node);
+ETERM * new_image_blank(ETERM *arg, int c_node);
+ETERM * write_to_png(ETERM* arg, int c_node); 
+ETERM * close_image(ETERM* arg, int c_node);   
+ETERM * save(ETERM* arg, int c_node);
+ETERM * restore(ETERM* arg, int c_node);
+ETERM * set_line_width(ETERM* arg, int c_node);
+ETERM * set_source_rgba(ETERM* arg, int c_node);
+ETERM * set_operator(ETERM* arg, int c_node);
+ETERM * move_to(ETERM* arg, int c_node);
+ETERM * line_to(ETERM* arg, int c_node);
+ETERM * curve_to(ETERM* arg, int c_node);
+ETERM * rel_move_to(ETERM* arg, int c_node);
+ETERM * rel_line_to(ETERM* arg, int c_node);
+ETERM * rel_curve_to(ETERM* arg, int c_node);
+ETERM * rectangle(ETERM* arg, int c_node);
+ETERM * arc(ETERM* arg, int c_node);
+ETERM * arc_negative(ETERM* arg, int c_node);
+ETERM * close_path(ETERM* arg, int c_node);
+ETERM * paint(ETERM* arg, int c_node);
+ETERM * fill(ETERM* arg, int c_node);  
+ETERM * fill_preserve(ETERM* arg, int c_node);   
+ETERM * stroke(ETERM* arg, int c_node);
+ETERM * stroke_preserve(ETERM* arg, int c_node);   
+ETERM * translate(ETERM* arg, int c_node);
+ETERM * scale(ETERM* arg, int c_node);
+ETERM * rotate(ETERM* arg, int c_node);
+ETERM * select_font_face(ETERM* arg, int c_node);
+ETERM * set_font_size(ETERM* arg, int c_node);
+ETERM * show_text(ETERM* arg, int c_node);
+ETERM * text_extents(ETERM* arg, int c_node);
+ETERM * surface_create_from_png(ETERM* arg, int c_node);
+ETERM * surface_get_width(ETERM* arg, int c_node);
+ETERM * surface_get_height(ETERM* arg, int c_node);
+ETERM * surface_destroy(ETERM* arg, int c_node);
+ETERM * set_source_surface(ETERM* arg, int c_node);
+ETERM * write_to_png_stream(ETERM* arg, int c_node);
 
 
 int main(int argc, char *argv[]) {     
@@ -145,77 +140,77 @@ int main(int argc, char *argv[]) {
                 loop = 0;
                 resp = erl_format("{c_node, ~i, ok}", c_node);
             } else if (is_function(fnp, "new_image_blank")) { 
-                resp = new_image_blank(fromp, argp, c_node); 
+                resp = new_image_blank(argp, c_node); 
             } else if (is_function(fnp, "write_to_png")) {
-                resp = write_to_png(fromp, argp, c_node);
+                resp = write_to_png(argp, c_node);
             } else if (is_function(fnp, "close_image")) {
-                resp = close_image(fromp, c_node);
+                resp = close_image(argp, c_node);
             } else if (is_function(fnp, "save")) {
-                resp = save(fromp, c_node);
+                resp = save(argp, c_node);
             } else if (is_function(fnp, "restore")) {
-                resp = restore(fromp, c_node);
+                resp = restore(argp, c_node);
             } else if (is_function(fnp, "set_line_width")) {
-                resp = set_line_width(fromp, argp, c_node);
+                resp = set_line_width(argp, c_node);
             } else if (is_function(fnp, "set_source_rgba")) {
-                resp = set_source_rgba(fromp, argp, c_node);	
+                resp = set_source_rgba(argp, c_node);	
 	        } else if (is_function(fnp, "set_operator")) {
-                resp = set_operator(fromp, argp, c_node);
+                resp = set_operator(argp, c_node);
             } else if (is_function(fnp, "move_to")) {
-                resp = move_to(fromp, argp, c_node);
+                resp = move_to(argp, c_node);
             } else if (is_function(fnp, "line_to")) {
-                resp = line_to(fromp, argp, c_node);
+                resp = line_to(argp, c_node);
             } else if (is_function(fnp, "curve_to")) {
-                resp = curve_to(fromp, argp, c_node);
+                resp = curve_to(argp, c_node);
             } else if (is_function(fnp, "rel_move_to")) {
-                resp = rel_move_to(fromp, argp, c_node);
+                resp = rel_move_to(argp, c_node);
             } else if (is_function(fnp, "rel_line_to")) {
-                resp = rel_line_to(fromp, argp, c_node);
+                resp = rel_line_to(argp, c_node);
             } else if (is_function(fnp, "rel_curve_to")) {
-                resp = rel_curve_to(fromp, argp, c_node);
+                resp = rel_curve_to(argp, c_node);
             } else if (is_function(fnp, "rectangle")) {
-                resp = rectangle(fromp, argp, c_node);
+                resp = rectangle(argp, c_node);
             } else if (is_function(fnp, "arc")) {
-                resp = arc(fromp, argp, c_node);
+                resp = arc(argp, c_node);
             } else if (is_function(fnp, "arc_negative")) {
-                resp = arc_negative(fromp, argp, c_node);
+                resp = arc_negative(argp, c_node);
             } else if (is_function(fnp, "close_path")) {
-                resp = close_path(fromp, c_node);
+                resp = close_path(argp, c_node);
             } else if (is_function(fnp, "paint")) {
-                resp = paint(fromp, c_node);
+                resp = paint(argp, c_node);
             } else if (is_function(fnp, "fill")) {
-                resp = fill(fromp, c_node);
+                resp = fill(argp, c_node);
             } else if (is_function(fnp, "fill_preserve")) {
-                resp = fill_preserve(fromp, c_node);
+                resp = fill_preserve(argp, c_node);
             } else if (is_function(fnp, "stroke")) {
-                resp = stroke(fromp, c_node);
+                resp = stroke(argp, c_node);
             } else if (is_function(fnp, "stroke_preserve")) {
-                resp = stroke_preserve(fromp, c_node);
+                resp = stroke_preserve(argp, c_node);
             } else if (is_function(fnp, "translate")) {
-                resp = translate(fromp, argp, c_node);
+                resp = translate(argp, c_node);
             } else if (is_function(fnp, "scale")) {
-                resp = scale(fromp, argp, c_node);
+                resp = scale(argp, c_node);
             } else if (is_function(fnp, "rotate")) {
-                resp = rotate(fromp, argp, c_node);
+                resp = rotate(argp, c_node);
             } else if (is_function(fnp, "select_font")) {
-                resp = select_font_face(fromp, argp, c_node);
+                resp = select_font_face(argp, c_node);
             } else if (is_function(fnp, "set_font_size")) {
-                resp = set_font_size(fromp, argp, c_node);
+                resp = set_font_size(argp, c_node);
             } else if (is_function(fnp, "show_text")) {
-                resp = show_text(fromp, argp, c_node);
+                resp = show_text(argp, c_node);
             } else if (is_function(fnp, "text_extents")) {
-                resp = text_extents(fromp, argp, c_node);          
+                resp = text_extents(argp, c_node);          
             } else if (is_function(fnp, "surface_create_from_png")) {
-                resp = surface_create_from_png(fromp, argp, c_node);          
+                resp = surface_create_from_png(argp, c_node);          
             } else if (is_function(fnp, "surface_get_width")) {
-                resp = surface_get_width(fromp, argp, c_node);          
+                resp = surface_get_width(argp, c_node);          
             } else if (is_function(fnp, "surface_get_height")) {
-                resp = surface_get_height(fromp, argp, c_node);          
+                resp = surface_get_height(argp, c_node);          
             } else if (is_function(fnp, "surface_destroy")) {
-                resp = surface_destroy(fromp, argp, c_node);          
+                resp = surface_destroy(argp, c_node);          
             } else if (is_function(fnp, "set_source_surface")) {
-                resp = set_source_surface(fromp, argp, c_node);          
+                resp = set_source_surface(argp, c_node);          
             } else if (is_function(fnp, "write_to_png_stream")) {
-                resp = write_to_png_stream(fromp, argp, c_node);          
+                resp = write_to_png_stream(argp, c_node);          
             } else {
                 resp = erl_format("{c_node, ~i, {error, '~s'}}", c_node, "unknown command");
             }         
@@ -257,17 +252,18 @@ void *ptr(ETERM *arg) {
 }
 
 
-cairo_context *get_cairo_context(ETERM* from) {
-    cairo_context *ctx = NULL;
-    char key[KEY_LENGTH];
-    sprintf(key, "%s%i%i%i", ERL_PID_NODE(from), 
-            ERL_PID_NUMBER(from), ERL_PID_SERIAL(from), ERL_PID_CREATION(from));
-    HASH_FIND_STR(cairo_context_hash, key, ctx);
-    return ctx;
+cairo_context *get_cairo_context(ETERM* arg) {
+    ETERM* ctx = erl_element(1, arg); 
+    cairo_context *ret = (cairo_context*)ptr(ctx);
+    erl_free_term(ctx);
+    FILE *f = fopen("/tmp/ec.txt", "a+");
+    fprintf(f, "Ctx: %d\n", ret);
+    fclose(f);
+    return ret;
 }
 
 
-ETERM * new_image_blank(ETERM* from, ETERM *arg, int c_node) { 
+ETERM * new_image_blank(ETERM *arg, int c_node) { 
     int stride, cbufsize, status, key_length;
     ETERM *width, *height;
     cairo_context *ctx = NULL;             
@@ -275,25 +271,18 @@ ETERM * new_image_blank(ETERM* from, ETERM *arg, int c_node) {
     height = erl_element(2, arg);
     stride = ERL_INT_VALUE(width) * 4;
     cbufsize = ERL_INT_VALUE(height) * stride;
-    key_length = strlen((char *)ERL_PID_NODE(from)) + 3*sizeof(int);
-    if (key_length <= KEY_LENGTH) {
-        ctx = malloc(sizeof(cairo_context));
-        if (ctx) {
-            sprintf(ctx->key, "%s%i%i%i", ERL_PID_NODE(from), 
-            ERL_PID_NUMBER(from), ERL_PID_SERIAL(from), ERL_PID_CREATION(from)); 
-            ctx->cbuf = (byte *)malloc(cbufsize);
-            if (ctx->cbuf) {
-                memset(ctx->cbuf, 0, cbufsize);
-                ctx->sf = cairo_image_surface_create_for_data(ctx->cbuf, 
-                        CAIRO_FORMAT_ARGB32, ERL_INT_VALUE(width), 
-                        ERL_INT_VALUE(height), stride);
-                ctx->cr = cairo_create(ctx->sf);
-                HASH_ADD_STR(cairo_context_hash, key, ctx);
-                return erl_format("{c_node, ~i, ok}", c_node);
-            } else {
-                return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
-            }
+    ctx = malloc(sizeof(cairo_context));
+    if (ctx) {
+        ctx->cbuf = (byte *)malloc(cbufsize);
+        if (ctx->cbuf) {
+            memset(ctx->cbuf, 0, cbufsize);
+            ctx->sf = cairo_image_surface_create_for_data(ctx->cbuf, 
+                    CAIRO_FORMAT_ARGB32, ERL_INT_VALUE(width), 
+                    ERL_INT_VALUE(height), stride);
+            ctx->cr = cairo_create(ctx->sf);
+            return erl_format("{c_node, ~i, {ok, ~i}}", c_node, ctx);
         } else {
+            free(ctx);
             return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
         }
     } else {
@@ -304,12 +293,12 @@ ETERM * new_image_blank(ETERM* from, ETERM *arg, int c_node) {
 }
 
 
-ETERM * write_to_png(ETERM* from, ETERM* arg, int c_node) {
+ETERM * write_to_png(ETERM* arg, int c_node) {
     int status;
     ETERM *file;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) { 
-        file = erl_element(1, arg); 
+        file = erl_element(2, arg); 
         status = cairo_surface_write_to_png(ctx->sf, (char *)ERL_ATOM_PTR(file));
         erl_free_term(file);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -319,13 +308,12 @@ ETERM * write_to_png(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * close_image(ETERM* from, int c_node) {
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * close_image(ETERM* arg, int c_node) {
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
         cairo_destroy(ctx->cr);
         cairo_surface_destroy(ctx->sf); 
         free(ctx->cbuf);
-        HASH_DEL(cairo_context_hash, ctx);
         return erl_format("{c_node, ~i, ok}", c_node);
     } else { 
         return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
@@ -333,8 +321,8 @@ ETERM * close_image(ETERM* from, int c_node) {
 }
 
 
-ETERM * save(ETERM* from, int c_node) {
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * save(ETERM* arg, int c_node) {
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
         cairo_save(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -344,8 +332,8 @@ ETERM * save(ETERM* from, int c_node) {
 }
 
 
-ETERM * restore(ETERM* from, int c_node) {
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * restore(ETERM* arg, int c_node) {
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
         cairo_restore(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -355,11 +343,11 @@ ETERM * restore(ETERM* from, int c_node) {
 }
 
 
-ETERM * set_line_width(ETERM* from, ETERM* arg, int c_node) {
+ETERM * set_line_width(ETERM* arg, int c_node) {
     ETERM *width;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        width = erl_element(1, arg);   
+        width = erl_element(2, arg);   
         cairo_set_line_width(ctx->cr, ERL_INT_VALUE(width));
         erl_free_term(width);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -369,14 +357,14 @@ ETERM * set_line_width(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * set_source_rgba(ETERM* from, ETERM* arg, int c_node) {
+ETERM * set_source_rgba(ETERM* arg, int c_node) {
     ETERM *r, *g, *b, *a;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        r = erl_element(1, arg); 
-        g = erl_element(2, arg);
-        b = erl_element(3, arg);
-        a = erl_element(4, arg);  
+        r = erl_element(2, arg); 
+        g = erl_element(3, arg);
+        b = erl_element(4, arg);
+        a = erl_element(5, arg);  
         cairo_set_source_rgba(ctx->cr, ERL_FLOAT_VALUE(r), val(g), val(b), val(a));
         erl_free_term(r);
         erl_free_term(g);
@@ -389,11 +377,11 @@ ETERM * set_source_rgba(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * set_operator(ETERM* from, ETERM* arg, int c_node) {
+ETERM * set_operator(ETERM* arg, int c_node) {
     ETERM *operator;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        operator = erl_element(1, arg);    
+        operator = erl_element(2, arg);    
         cairo_set_operator(ctx->cr, ERL_INT_VALUE(operator));
         erl_free_term(operator);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -403,12 +391,12 @@ ETERM * set_operator(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * move_to(ETERM* from, ETERM* arg, int c_node) {
+ETERM * move_to(ETERM* arg, int c_node) {
     ETERM *x, *y;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        x = erl_element(1, arg);  
-        y = erl_element(2, arg); 
+        x = erl_element(2, arg);  
+        y = erl_element(3, arg); 
         cairo_move_to(ctx->cr, val(x), val(y));
         erl_free_term(x);
         erl_free_term(y);
@@ -419,12 +407,12 @@ ETERM * move_to(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * line_to(ETERM* from, ETERM* arg, int c_node) {
+ETERM * line_to(ETERM* arg, int c_node) {
     ETERM *x, *y;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        x = erl_element(1, arg);  
-        y = erl_element(2, arg); 
+        x = erl_element(2, arg);  
+        y = erl_element(3, arg); 
         cairo_line_to(ctx->cr, ERL_INT_VALUE(x), ERL_INT_VALUE(y));
         erl_free_term(x);
         erl_free_term(y);
@@ -435,16 +423,16 @@ ETERM * line_to(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * curve_to(ETERM* from, ETERM* arg, int c_node) {
+ETERM * curve_to(ETERM* arg, int c_node) {
     ETERM *c1x, *c1y, *c2x, *c2y, *x, *y;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        c1x = erl_element(1, arg);  
-        c1y = erl_element(2, arg); 
-        c2x = erl_element(3, arg);  
-        c2y = erl_element(4, arg);
-        x = erl_element(5, arg);  
-        y = erl_element(6, arg);
+        c1x = erl_element(2, arg);  
+        c1y = erl_element(3, arg); 
+        c2x = erl_element(4, arg);  
+        c2y = erl_element(5, arg);
+        x = erl_element(6, arg);  
+        y = erl_element(7, arg);
         cairo_curve_to(ctx->cr, ERL_INT_VALUE(c1x), 
             val(c1y),
             val(c2x),
@@ -464,12 +452,12 @@ ETERM * curve_to(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * rel_move_to(ETERM* from, ETERM* arg, int c_node) {
+ETERM * rel_move_to(ETERM* arg, int c_node) {
     ETERM *x, *y;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        x = erl_element(1, arg);  
-        y = erl_element(2, arg); 
+        x = erl_element(2, arg);  
+        y = erl_element(3, arg); 
         cairo_rel_move_to(ctx->cr, val(x), val(y));
         erl_free_term(x);
         erl_free_term(y);
@@ -480,12 +468,12 @@ ETERM * rel_move_to(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * rel_line_to(ETERM* from, ETERM* arg, int c_node) {
+ETERM * rel_line_to(ETERM* arg, int c_node) {
     ETERM *x, *y;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        x = erl_element(1, arg);  
-        y = erl_element(2, arg); 
+        x = erl_element(2, arg);  
+        y = erl_element(3, arg); 
         cairo_rel_line_to(ctx->cr, val(x), val(y));
         erl_free_term(x);
         erl_free_term(y);
@@ -496,16 +484,16 @@ ETERM * rel_line_to(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * rel_curve_to(ETERM* from, ETERM* arg, int c_node) {
+ETERM * rel_curve_to(ETERM* arg, int c_node) {
     ETERM *c1x, *c1y, *c2x, *c2y, *x, *y;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        c1x = erl_element(1, arg);  
-        c1y = erl_element(2, arg); 
-        c2x = erl_element(3, arg);  
-        c2y = erl_element(4, arg);
-        x = erl_element(5, arg);  
-        y = erl_element(6, arg);
+        c1x = erl_element(2, arg);  
+        c1y = erl_element(3, arg); 
+        c2x = erl_element(4, arg);  
+        c2y = erl_element(5, arg);
+        x = erl_element(6, arg);  
+        y = erl_element(7, arg);
         cairo_rel_curve_to(ctx->cr, val(c1x), 
             val(c1y),
             val(c2x),
@@ -525,14 +513,14 @@ ETERM * rel_curve_to(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * rectangle(ETERM* from, ETERM* arg, int c_node) {
+ETERM * rectangle(ETERM* arg, int c_node) {
   ETERM *x1, *y1, *x2, *y2;
-  cairo_context *ctx = get_cairo_context(from);
+  cairo_context *ctx = get_cairo_context(arg);
   if (ctx) {
-    x1 = erl_element(1, arg); 
-    y1 = erl_element(2, arg);
-    x2 = erl_element(3, arg);
-    y2 = erl_element(4, arg);  
+    x1 = erl_element(2, arg); 
+    y1 = erl_element(3, arg);
+    x2 = erl_element(4, arg);
+    y2 = erl_element(5, arg);  
     cairo_rectangle(ctx->cr, val(x1),
       val(y1),
       val(x2),
@@ -548,15 +536,15 @@ ETERM * rectangle(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * arc(ETERM* from, ETERM* arg, int c_node) {
+ETERM * arc(ETERM* arg, int c_node) {
     ETERM *x, *y, *r, *a1, *a2;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        x = erl_element(1, arg); 
-        y = erl_element(2, arg);
-        r = erl_element(3, arg);
-        a1 = erl_element(4, arg);  
-        a2 = erl_element(5, arg); 
+        x = erl_element(2, arg); 
+        y = erl_element(3, arg);
+        r = erl_element(4, arg);
+        a1 = erl_element(5, arg);  
+        a2 = erl_element(6, arg); 
         cairo_arc(ctx->cr, val(x),
             val(y),
             val(r),
@@ -574,15 +562,15 @@ ETERM * arc(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * arc_negative(ETERM* from, ETERM* arg, int c_node) {
+ETERM * arc_negative(ETERM* arg, int c_node) {
   ETERM *x, *y, *r, *a1, *a2;
-  cairo_context *ctx = get_cairo_context(from);
+  cairo_context *ctx = get_cairo_context(arg);
   if (ctx) {
-        x = erl_element(1, arg); 
-        y = erl_element(2, arg);
-        r = erl_element(3, arg);
-        a1 = erl_element(4, arg);  
-        a2 = erl_element(5, arg); 
+        x = erl_element(2, arg); 
+        y = erl_element(3, arg);
+        r = erl_element(4, arg);
+        a1 = erl_element(5, arg);  
+        a2 = erl_element(6, arg); 
         cairo_arc_negative(ctx->cr, val(x),
             val(y),
             val(r),
@@ -600,8 +588,8 @@ ETERM * arc_negative(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * close_path(ETERM* from, int c_node) { 
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * close_path(ETERM* arg, int c_node) { 
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) { 
         cairo_close_path(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -611,8 +599,8 @@ ETERM * close_path(ETERM* from, int c_node) {
 }
 
 
-ETERM * paint(ETERM* from, int c_node) {   
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * paint(ETERM* arg, int c_node) {   
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
         cairo_paint(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -622,8 +610,8 @@ ETERM * paint(ETERM* from, int c_node) {
 }
 
 
-ETERM * fill(ETERM* from, int c_node) {  
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * fill(ETERM* arg, int c_node) {  
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
         cairo_fill(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -633,8 +621,8 @@ ETERM * fill(ETERM* from, int c_node) {
 }
 
 
-ETERM * fill_preserve(ETERM* from, int c_node) {   
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * fill_preserve(ETERM* arg, int c_node) {   
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
         cairo_fill_preserve(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -644,8 +632,8 @@ ETERM * fill_preserve(ETERM* from, int c_node) {
 }
 
 
-ETERM * stroke(ETERM* from, int c_node) { 
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * stroke(ETERM* arg, int c_node) { 
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) { 
         cairo_stroke(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -655,8 +643,8 @@ ETERM * stroke(ETERM* from, int c_node) {
 }
 
 
-ETERM * stroke_preserve(ETERM* from, int c_node) {   
-    cairo_context *ctx = get_cairo_context(from);
+ETERM * stroke_preserve(ETERM* arg, int c_node) {   
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
         cairo_stroke_preserve(ctx->cr);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -666,12 +654,12 @@ ETERM * stroke_preserve(ETERM* from, int c_node) {
 }
 
 
-ETERM * translate(ETERM* from, ETERM* arg, int c_node) {
+ETERM * translate(ETERM* arg, int c_node) {
     ETERM *tx, *ty;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        tx = erl_element(1, arg);  
-        ty = erl_element(2, arg); 
+        tx = erl_element(2, arg);  
+        ty = erl_element(3, arg); 
         cairo_translate(ctx->cr, val(tx), val(ty));
         erl_free_term(tx);
         erl_free_term(ty);
@@ -682,12 +670,12 @@ ETERM * translate(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * scale(ETERM* from, ETERM* arg, int c_node) {
+ETERM * scale(ETERM* arg, int c_node) {
     ETERM *sx, *sy;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        sx = erl_element(1, arg);  
-        sy = erl_element(2, arg); 
+        sx = erl_element(2, arg);  
+        sy = erl_element(3, arg); 
         cairo_scale(ctx->cr, val(sx), val(sy));
         erl_free_term(sx);
         erl_free_term(sy);
@@ -698,11 +686,11 @@ ETERM * scale(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * rotate(ETERM* from, ETERM* arg, int c_node) {
+ETERM * rotate(ETERM* arg, int c_node) {
     ETERM *angle;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        angle = erl_element(1, arg);   
+        angle = erl_element(2, arg);   
         cairo_rotate(ctx->cr, val(angle));
         erl_free_term(angle);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -712,13 +700,13 @@ ETERM * rotate(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * select_font_face(ETERM* from, ETERM* arg, int c_node) {
+ETERM * select_font_face(ETERM* arg, int c_node) {
     ETERM *family, *slant, *weight;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        family = erl_element(1, arg);  
-        slant = erl_element(2, arg); 
-        weight = erl_element(3, arg);
+        family = erl_element(2, arg);  
+        slant = erl_element(3, arg); 
+        weight = erl_element(4, arg);
         cairo_select_font_face(ctx->cr, (char *)ERL_ATOM_PTR(family), ERL_INT_VALUE(slant), val(weight));
         erl_free_term(family);
         erl_free_term(slant);
@@ -730,11 +718,11 @@ ETERM * select_font_face(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * set_font_size(ETERM* from, ETERM* arg, int c_node) {
+ETERM * set_font_size(ETERM* arg, int c_node) {
     ETERM *size;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-      size = erl_element(1, arg);   
+      size = erl_element(2, arg);   
         cairo_set_font_size(ctx->cr, val(size));
         erl_free_term(size);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -744,11 +732,11 @@ ETERM * set_font_size(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * show_text(ETERM* from, ETERM* arg, int c_node) {
+ETERM * show_text(ETERM* arg, int c_node) {
     ETERM *text;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        text = erl_element(1, arg);   
+        text = erl_element(2, arg);   
         cairo_show_text(ctx->cr, (char *)ERL_ATOM_PTR(text));
         erl_free_term(text);
         return erl_format("{c_node, ~i, ok}", c_node);
@@ -758,12 +746,12 @@ ETERM * show_text(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * text_extents(ETERM* from, ETERM* arg, int c_node) {
+ETERM * text_extents(ETERM* arg, int c_node) {
     ETERM *text;
     cairo_text_extents_t extents;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        text = erl_element(1, arg);
+        text = erl_element(2, arg);
         cairo_text_extents (ctx->cr, (char *)ERL_ATOM_PTR(text), &extents);        
         erl_free_term(text);
         return erl_format("{c_node, ~i, {~f, ~f}}", c_node, extents.width, extents.height);
@@ -773,7 +761,7 @@ ETERM * text_extents(ETERM* from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * surface_create_from_png(ETERM *from, ETERM* arg, int c_node) {
+ETERM * surface_create_from_png(ETERM* arg, int c_node) {
     ETERM *file;
     file = erl_element(1, arg); 
     cairo_surface_t *surface = cairo_image_surface_create_from_png((char *)ERL_ATOM_PTR(file));
@@ -782,7 +770,7 @@ ETERM * surface_create_from_png(ETERM *from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * surface_get_width(ETERM *from, ETERM* arg, int c_node) {
+ETERM * surface_get_width(ETERM* arg, int c_node) {
     ETERM *surface;
     surface = erl_element(1, arg); 
     int w = cairo_image_surface_get_width(ptr(surface));
@@ -790,7 +778,7 @@ ETERM * surface_get_width(ETERM *from, ETERM* arg, int c_node) {
     return erl_format("{c_node, ~i, {ok, ~i}}", c_node, w);
 }
 
-ETERM * surface_get_height(ETERM *from, ETERM* arg, int c_node) {
+ETERM * surface_get_height(ETERM* arg, int c_node) {
     ETERM *surface;
     surface = erl_element(1, arg); 
     int h = cairo_image_surface_get_height(ptr(surface));
@@ -799,7 +787,7 @@ ETERM * surface_get_height(ETERM *from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * surface_destroy(ETERM *from, ETERM* arg, int c_node) {
+ETERM * surface_destroy(ETERM* arg, int c_node) {
     ETERM *surface;
     surface = erl_element(1, arg); 
     cairo_surface_destroy(ptr(surface));
@@ -808,13 +796,13 @@ ETERM * surface_destroy(ETERM *from, ETERM* arg, int c_node) {
 }
 
 
-ETERM * set_source_surface(ETERM *from, ETERM* arg, int c_node) {
+ETERM * set_source_surface(ETERM* arg, int c_node) {
     ETERM *surface, *x, *y;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) {
-        surface = erl_element(1, arg); 
-        x = erl_element(2, arg);
-        y = erl_element(3, arg);
+        surface = erl_element(2, arg); 
+        x = erl_element(3, arg);
+        y = erl_element(4, arg);
         cairo_set_source_surface(ctx->cr, ptr(surface), val(x), val(y));
         erl_free_term(surface);
         erl_free_term(x);
@@ -847,9 +835,9 @@ cairo_status_t write_cb(void *closure, const unsigned char *data, unsigned int l
     return CAIRO_STATUS_SUCCESS;
 }
 
-ETERM * write_to_png_stream(ETERM *from, ETERM* arg, int c_node) {
+ETERM * write_to_png_stream(ETERM* arg, int c_node) {
     int status;
-    cairo_context *ctx = get_cairo_context(from);
+    cairo_context *ctx = get_cairo_context(arg);
     if (ctx) { 
         struct png_data out = {};
         status = cairo_surface_write_to_png_stream(ctx->sf, write_cb, &out);
