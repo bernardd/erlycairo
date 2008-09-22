@@ -511,14 +511,19 @@ write_to_png_stream() ->
 %% @end 
 %%--------------------------------------------------------------------  
 init(CNodeNumber) ->  
-    CNodeBinPath = filename:join([filename:dirname(code:which(?MODULE)),"..", "priv", "bin", "erlycairo"]),
-    Cookie = atom_to_list(erlang:get_cookie()),
-    Node = atom_to_list(node()),
-    Cmd = lists:concat([CNodeBinPath, " ", CNodeNumber, " ", Cookie, " ", Node]),
-    Port = open_port({spawn, Cmd}, []),   
-    HostName = string:strip(os:cmd("hostname -s"), right, $\n),
-    CNodeName = lists:concat(["c", CNodeNumber, "@", HostName]),
-    {ok, #state{cnode_number = CNodeNumber, cnode = list_to_atom(CNodeName), port=Port}}.
+    Path = filename:join([code:priv_dir("erlycairo"), "bin"]),
+    Bin = "erlycairo",
+    case os:find_executable(Bin, Path) of
+    false -> erlang:error({executable_not_found, Bin});
+    Exe ->
+        Cookie = atom_to_list(erlang:get_cookie()),
+        Node = atom_to_list(node()),
+        Cmd = lists:concat([Exe, " ", CNodeNumber, " ", Cookie, " ", Node]),
+        Port = open_port({spawn, Cmd}, []),   
+        HostName = string:strip(os:cmd("hostname -s"), right, $\n),
+        CNodeName = lists:concat(["c", CNodeNumber, "@", HostName]),
+        {ok, #state{cnode_number = CNodeNumber, cnode = list_to_atom(CNodeName), port=Port}}
+    end.
 
 %%--------------------------------------------------------------------
 %% @spec 
