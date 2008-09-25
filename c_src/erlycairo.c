@@ -85,6 +85,7 @@ ETERM * set_font_size(ETERM* arg, int c_node);
 ETERM * show_text(ETERM* arg, int c_node);
 ETERM * text_extents(ETERM* arg, int c_node);
 ETERM * surface_create_from_png(ETERM* arg, int c_node);
+ETERM * surface_create_from_png_stream(ETERM* arg, int c_node);
 ETERM * surface_get_width(ETERM* arg, int c_node);
 ETERM * surface_get_height(ETERM* arg, int c_node);
 ETERM * surface_destroy(ETERM* arg, int c_node);
@@ -200,7 +201,9 @@ int main(int argc, char *argv[]) {
             } else if (is_function(fnp, "text_extents")) {
                 resp = text_extents(argp, c_node);          
             } else if (is_function(fnp, "surface_create_from_png")) {
-                resp = surface_create_from_png(argp, c_node);          
+                resp = surface_create_from_png(argp, c_node);
+            } else if (is_function(fnp, "surface_create_from_png_stream")) {
+                resp = surface_create_from_png_stream(argp, c_node);
             } else if (is_function(fnp, "surface_get_width")) {
                 resp = surface_get_width(argp, c_node);          
             } else if (is_function(fnp, "surface_get_height")) {
@@ -762,8 +765,7 @@ ETERM * text_extents(ETERM* arg, int c_node) {
 
 
 ETERM * surface_create_from_png(ETERM* arg, int c_node) {
-    ETERM *file;
-    file = erl_element(1, arg); 
+    ETERM *file = erl_element(1, arg); 
     cairo_surface_t *surface = cairo_image_surface_create_from_png((char *)ERL_ATOM_PTR(file));
     erl_free_term(file);
     return erl_format("{c_node, ~i, {ok, ~i}}", c_node, surface);
@@ -835,29 +837,53 @@ cairo_status_t write_cb(void *closure, const unsigned char *data, unsigned int l
     return CAIRO_STATUS_SUCCESS;
 }
 
+
 ETERM * write_to_png_stream(ETERM* arg, int c_node) {
-    int status;
-    cairo_context *ctx = get_cairo_context(arg);
-    if (ctx) { 
-        struct png_data out = {};
-        status = cairo_surface_write_to_png_stream(ctx->sf, write_cb, &out);
-        ETERM *term = NULL;
+	cairo_context * const ctx = get_cairo_context(arg);
+	if(!ctx)
+		return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
 
-        ei_x_buff req;
-        ei_x_new_with_version(&req);
-        ei_x_encode_tuple_header(&req, 3);
-        ei_x_encode_atom(&req, "c_node");
-        ei_x_encode_long(&req, c_node);
-        ei_x_encode_tuple_header(&req, 2);
-        ei_x_encode_atom(&req, "ok");
-        ei_x_encode_binary(&req, out.buf, out.written);
+	struct png_data out = {};
+	const int status = cairo_surface_write_to_png_stream(ctx->sf, write_cb, &out);
+	ETERM *term = NULL;
 
-        int index = 0;
-        ei_decode_term(req.buff, &index, &term);
-        ei_x_free(&req);
-        free(out.buf);
-        return term;
-    } else { 
-        return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
-    }
+	ei_x_buff req;
+	ei_x_new_with_version(&req);
+	ei_x_encode_tuple_header(&req, 3);
+	ei_x_encode_atom(&req, "c_node");
+	ei_x_encode_long(&req, c_node);
+	ei_x_encode_tuple_header(&req, 2);
+	ei_x_encode_atom(&req, "ok");
+	ei_x_encode_binary(&req, out.buf, out.written);
+
+	int index = 0;
+	ei_decode_term(req.buff, &index, &term);
+	ei_x_free(&req);
+	free(out.buf);
+	return term;
+}
+
+cairo_status_t read_cb(void *closure, unsigned char *data, unsigned int length) {
+    struct png_data * const in = (struct png_data*)closure;
+
+	 // Sanity check. Make sure we don't try to copy past the end of the buffer.
+	 const unsigned int bytesRemaining = in->size - in->written;
+	 if( length>bytesRemaining )
+		 length = bytesRemaining;
+
+    memcpy(data, in->buf + in->written, length);	// Copy the requested data(offset) into the destination buffer.
+    in->written += length;									// Update our internal counter.
+
+    return CAIRO_STATUS_SUCCESS;
+}
+
+ETERM * surface_create_from_png_stream(ETERM* arg, int c_node) {
+    ETERM* bin = erl_element(1, arg); 
+	 struct png_data in = {};
+	 in.size = ERL_BIN_SIZE(bin);
+	 in.buf = ERL_BIN_PTR(bin);
+
+    cairo_surface_t *surface = cairo_image_surface_create_from_png_stream(read_cb, &in);
+	 erl_free_term(bin);
+    return erl_format("{c_node, ~i, {ok, ~i}}", c_node, surface);
 }

@@ -76,6 +76,7 @@
     show_text/2,
     text_extents/2,
     surface_create_from_png/1,
+    surface_create_from_png_stream/1,
     surface_get_width/1,
     surface_get_height/1,
     surface_destroy/1,
@@ -451,6 +452,15 @@ text_extents(Ctx, Text) ->
 %%--------------------------------------------------------------------
 surface_create_from_png(Filename) ->
     gen_server:call(?MODULE, {surface_create_from_png, {list_to_atom(Filename)}}).
+
+
+%%--------------------------------------------------------------------
+%% @spec  
+%% @doc
+%% @end 
+%%--------------------------------------------------------------------
+surface_create_from_png_stream(Stream) ->
+    gen_server:call(?MODULE, {surface_create_from_png_stream, {Stream}}).
       
   
 %%--------------------------------------------------------------------
