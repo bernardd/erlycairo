@@ -526,9 +526,13 @@ init(CNodeNumber) ->
     case os:find_executable(Bin, Path) of
     false -> erlang:error({executable_not_found, Bin});
     Exe ->
-        Cookie = atom_to_list(erlang:get_cookie()),
+        Cookie = case application:get_env(cookie_file) of
+            undefined -> "-setcookie " ++ atom_to_list(erlang:get_cookie());
+            {ok, File} -> "-cookiefile \"" ++ File ++ "\""
+        end,
         Node = atom_to_list(node()),
         Cmd = lists:concat([Exe, " ", CNodeNumber, " ", Cookie, " ", Node]),
+        process_flag(trap_exit, true),
         Port = open_port({spawn, Cmd}, []),   
         HostName = string:strip(os:cmd("hostname -s"), right, $\n),
         CNodeName = lists:concat(["c", CNodeNumber, "@", HostName]),
@@ -571,6 +575,8 @@ handle_cast(_Msg, State) ->
 %% @doc Handling all non call/cast messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_info({'EXIT', Port, Reason}, State = #state{port = Port}) ->
+    {stop, {port_process_died, Reason}, State#state{port = undefined}};
 handle_info(_Info, State) ->
     {noreply, State}.
 

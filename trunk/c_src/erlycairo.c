@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -93,34 +94,66 @@ ETERM * set_source_surface(ETERM* arg, int c_node);
 ETERM * write_to_png_stream(ETERM* arg, int c_node);
 
 
+void quit_with_error(const char *fmt, ...) {
+	char buf[512];
+	va_list ap;
+	va_start(ap, fmt);
+	int rv = vsprintf(buf, fmt, ap);
+	va_end(ap);
+	erl_err_quit("Erlycairo FATAL ERROR: %s\n", buf);
+}
+
+void get_cookie(const char *type, const char *data, char *cookie) {
+	if (!strcmp(type, "-cookiefile")) {
+		// Cookie to be read from a file
+		FILE *f = fopen(data, "r");
+		if (!f)
+			quit_with_error("Could not open cookie file: %d (%s)", errno, strerror(errno));
+		size_t bytesread = fread(cookie, 1, EI_MAX_COOKIE_SIZE, f);
+		if (!bytesread)
+			quit_with_error("Could not read cookie from file");
+		cookie[bytesread] = '\0';
+	} else {
+		// Cookie passed in verbatim
+		strncpy(cookie, data, EI_MAX_COOKIE_SIZE);
+		cookie[EI_MAX_COOKIE_SIZE] = '\0';
+	}
+}
+
+
 int main(int argc, char *argv[]) {     
     int fd;                      /* fd to Erlang node */
     unsigned char buf[BUFSIZE];  /* Buffer for incoming message */
     ErlMessage emsg;             /* Incoming message */
     int c_node;                   /* C-Node number */
-    char *cookie;                /* Shared cookie */
+    char cookie[EI_MAX_COOKIE_SIZE+1];  /* Shared cookie */
     short creation;              /* ?? */
     char *erlang_node;           /* Erlang node to connect to */
+	 char *cookie_opt;				/* Where to source our cookie */
+	 char *cookie_data;				/* Either the filename or literal cookie */
     ETERM *fromp, *msgp, *fnp, *argp, *resp;
     int received, loop = 1;
     
-    if (argc < 4) {
-        erl_err_quit("invalid_args");
+    if (argc < 5) {
+        quit_with_error("invalid_args");
     }
     
     c_node = atoi(argv[1]);
-    cookie = argv[2];
+    cookie_opt = argv[2];
+	 cookie_data = argv[3];
     creation = 0;
-    erlang_node = argv[3];
+    erlang_node = argv[4];
     
     erl_init(NULL, 0);
+
+	 get_cookie(cookie_opt, cookie_data, cookie);
     
     if (!erl_connect_init(c_node, cookie, creation)) {
-        erl_err_quit("erl_connect_init");
+        quit_with_error("erl_connect_init");
     }
     
     if ((fd = erl_connect(erlang_node)) < 0) {
-        erl_err_quit("erl_connect"); 
+        quit_with_error("erl_connect"); 
     }
        
     while (loop) {
@@ -231,7 +264,6 @@ int main(int argc, char *argv[]) {
   exit(EXIT_SUCCESS);
 }
 
-
 int is_function(ETERM *fn, char *fn_name) {
     return (strcmp((char *)ERL_ATOM_PTR(fn), fn_name) == 0);
 }
@@ -260,7 +292,7 @@ cairo_context *get_cairo_context(ETERM* arg) {
     cairo_context *ret = (cairo_context*)ptr(ctx);
     erl_free_term(ctx);
     FILE *f = fopen("/tmp/ec.txt", "a+");
-    fprintf(f, "Ctx: %d\n", ret);
+    fprintf(f, "Ctx: %p\n", ret);
     fclose(f);
     return ret;
 }

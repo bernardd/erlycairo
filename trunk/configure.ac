@@ -1,4 +1,4 @@
-AC_INIT(libcairo wrapper library for Erlang, 0.0.24, 
+AC_INIT(libcairo wrapper library for Erlang, 0.0.25, 
              rsaccon@gmail.com, erlycairo)
 dnl Require autoconf version >=2.59c. first one with erlang macros
 AC_PREREQ(2.59c)
