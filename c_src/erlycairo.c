@@ -282,9 +282,9 @@ double val(ETERM *arg) {
 }
 
 void *ptr(ETERM *arg) {
-	if (ERL_IS_BINARY(arg))
-		return (void*)ERL_BIN_PTR(arg);
-	return NULL;
+    if (ERL_IS_BINARY(arg))
+        return *(void**)ERL_BIN_PTR(arg);
+    return NULL;
 }
 
 
