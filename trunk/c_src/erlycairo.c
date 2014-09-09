@@ -1,3 +1,4 @@
+// vim: set expandtab ts=4 sw=4:
 // File:      erlycairo.c
 // author:    Roberto Saccon <rsaccon@gmail.com> [http://rsaccon.com]
 // copyright: 2007 Roberto Saccon
@@ -281,27 +282,31 @@ double val(ETERM *arg) {
 }
 
 void *ptr(ETERM *arg) {
-	if (ERL_IS_INTEGER(arg))
-		return (void*)ERL_INT_VALUE(arg);
+	if (ERL_IS_BINARY(arg))
+		return (void*)ERL_BIN_PTR(arg);
 	return NULL;
 }
 
 
 cairo_context *get_cairo_context(ETERM* arg) {
-    ETERM* ctx = erl_element(1, arg); 
+    ETERM* ctx = erl_element(1, arg);
     cairo_context *ret = (cairo_context*)ptr(ctx);
     erl_free_term(ctx);
-    FILE *f = fopen("/tmp/ec.txt", "a+");
-    fprintf(f, "Ctx: %p\n", ret);
-    fclose(f);
+    return ret;
+}
+
+cairo_surface_t *get_cairo_surface(ETERM* arg) {
+    ETERM* s = erl_element(1, arg);
+    cairo_surface_t *ret = (cairo_surface_t*)ptr(s);
+    erl_free_term(s);
     return ret;
 }
 
 
 ETERM * new_image_blank(ETERM *arg, int c_node) { 
     int stride, cbufsize, status, key_length;
-    ETERM *width, *height;
-    cairo_context *ctx = NULL;             
+    ETERM *width, *height, *ret;
+    cairo_context *ctx = NULL;
     width = erl_element(1, arg);
     height = erl_element(2, arg);
     stride = ERL_INT_VALUE(width) * 4;
@@ -315,16 +320,19 @@ ETERM * new_image_blank(ETERM *arg, int c_node) {
                     CAIRO_FORMAT_ARGB32, ERL_INT_VALUE(width), 
                     ERL_INT_VALUE(height), stride);
             ctx->cr = cairo_create(ctx->sf);
-            return erl_format("{c_node, ~i, {ok, ~i}}", c_node, ctx);
+            ETERM *ctx_bin = erl_mk_binary((char *)&ctx, sizeof(ctx));
+            ret = erl_format("{c_node, ~i, {ok, ~w}}", c_node, ctx_bin);
+            erl_free_term(ctx_bin);
         } else {
             free(ctx);
-            return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
+            ret = erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
         }
     } else {
-        return erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
+        ret = erl_format("{c_node, ~i, {error, '~s'}}", c_node, ERR_CONTEXT);
     }
     erl_free_term(width);
     erl_free_term(height);
+    return ret;
 }
 
 
@@ -795,37 +803,41 @@ ETERM * text_extents(ETERM* arg, int c_node) {
     }
 }
 
+ETERM * verify_surface(cairo_surface_t *surface, int c_node) {
+    cairo_status_t status;
+    if ((status = cairo_surface_status(surface)) != CAIRO_STATUS_SUCCESS)
+        return erl_format("{c_node, ~i, {error, ~s}}", c_node, cairo_status_to_string(status));
+
+    ETERM *ptr = erl_mk_binary((char*)&surface, sizeof(surface));
+    ETERM *ret = erl_format("{c_node, ~i, {ok, ~w}}", c_node, ptr);
+    erl_free_term(ptr);
+    return ret;
+}
 
 ETERM * surface_create_from_png(ETERM* arg, int c_node) {
     ETERM *file = erl_element(1, arg); 
     cairo_surface_t *surface = cairo_image_surface_create_from_png((char *)ERL_ATOM_PTR(file));
     erl_free_term(file);
-    return erl_format("{c_node, ~i, {ok, ~i}}", c_node, surface);
+    return verify_surface(surface, c_node);
 }
 
 
 ETERM * surface_get_width(ETERM* arg, int c_node) {
-    ETERM *surface;
-    surface = erl_element(1, arg); 
-    int w = cairo_image_surface_get_width(ptr(surface));
-    erl_free_term(surface);
+    cairo_surface_t *surface = get_cairo_surface(arg);
+    int w = cairo_image_surface_get_width(surface);
     return erl_format("{c_node, ~i, {ok, ~i}}", c_node, w);
 }
 
 ETERM * surface_get_height(ETERM* arg, int c_node) {
-    ETERM *surface;
-    surface = erl_element(1, arg); 
-    int h = cairo_image_surface_get_height(ptr(surface));
-    erl_free_term(surface);
+    cairo_surface_t *surface = get_cairo_surface(arg);
+    int h = cairo_image_surface_get_height(surface);
     return erl_format("{c_node, ~i, {ok, ~i}}", c_node, h);
 }
 
 
 ETERM * surface_destroy(ETERM* arg, int c_node) {
-    ETERM *surface;
-    surface = erl_element(1, arg); 
-    cairo_surface_destroy(ptr(surface));
-    erl_free_term(surface);
+    cairo_surface_t *surface = get_cairo_surface(arg);
+    cairo_surface_destroy(surface);
     return erl_format("{c_node, ~i, ok}", c_node);
 }
 
@@ -917,5 +929,5 @@ ETERM * surface_create_from_png_stream(ETERM* arg, int c_node) {
 
     cairo_surface_t *surface = cairo_image_surface_create_from_png_stream(read_cb, &in);
 	 erl_free_term(bin);
-    return erl_format("{c_node, ~i, {ok, ~i}}", c_node, surface);
+    return verify_surface(surface, c_node);
 }
